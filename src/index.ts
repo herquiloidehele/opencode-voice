@@ -27,13 +27,15 @@ type PluginCtx = {
   }
   directory: string
   worktree?: string
-  project: { config?: { voice?: unknown } }
+  project?: unknown
   $: unknown
 }
 
-export const OpencodeVoice = async (ctx: PluginCtx) => {
+type PluginOptions = Record<string, unknown> | undefined
+
+export const OpencodeVoice = async (ctx: PluginCtx, options?: PluginOptions) => {
   try {
-    return await initPlugin(ctx)
+    return await initPlugin(ctx, options)
   } catch (err) {
     // Last-line-of-defense: never let plugin failure crash opencode startup.
     try {
@@ -48,9 +50,12 @@ export const OpencodeVoice = async (ctx: PluginCtx) => {
   }
 }
 
-async function initPlugin(ctx: PluginCtx) {
+async function initPlugin(ctx: PluginCtx, options?: PluginOptions) {
   const logger = createLogger(ctx.client as any, "opencode-voice")
-  const rawConfig = (ctx.project?.config as any)?.voice ?? {}
+  // opencode passes per-plugin config as the second argument when the user
+  // declares the plugin in tuple form: ["opencode-voice", { ...options }].
+  // We accept any user object and let parseConfig validate + apply defaults.
+  const rawConfig = options ?? {}
   const parsed = parseConfig(rawConfig)
 
   if (!parsed.ok) {

@@ -17,12 +17,50 @@ Voice plugin for [opencode](https://opencode.ai). Speaks agent activity through 
 
 3. By default you'll hear: session completions (LLM-summarized), errors, permission requests, "all todos complete", and session compactions.
 
+## Configuration
+
+opencode passes per-plugin config via the **tuple form** in the `plugin`
+array — *not* as a top-level key. Don't put `"voice": { … }` at the top of
+`opencode.json`; opencode's schema validator will reject it with
+`Unrecognized key: voice`. Instead:
+
+```json
+{
+  "plugin": [
+    ["opencode-voice", { "tts": { "provider": "system", "voice": "Samantha" } }]
+  ]
+}
+```
+
+All configuration snippets below show the **inner options object** (the
+second element of that tuple). Put them inside `["opencode-voice", { … }]`.
+
+Full example:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugin": [
+    [
+      "opencode-voice",
+      {
+        "tts": { "provider": "system", "voice": "Samantha", "rate": 1.0 },
+        "narrator": { "model": "openai/gpt-4o-mini" },
+        "events": {
+          "tool.execute.before": { "enabled": true }
+        }
+      }
+    ]
+  ]
+}
+```
+
 ## Providers
 
 ### System (default, zero-config)
 
 ```json
-{ "voice": { "tts": { "provider": "system", "voice": "Samantha" } } }
+{ "tts": { "provider": "system", "voice": "Samantha" } }
 ```
 
 - macOS: any installed voice. Try `say -v ?` for the list.
@@ -33,26 +71,22 @@ Voice plugin for [opencode](https://opencode.ai). Speaks agent activity through 
 
 ```json
 {
-  "voice": {
-    "tts": {
-      "provider": "openai",
-      "voice": "nova"
-    }
+  "tts": {
+    "provider": "openai",
+    "voice": "nova"
   }
 }
 ```
 
-Set `OPENAI_API_KEY` in your environment, or `voice.tts.openai.apiKey` in config.
+Set `OPENAI_API_KEY` in your environment, or `tts.openai.apiKey` in config.
 
 ### ElevenLabs
 
 ```json
 {
-  "voice": {
-    "tts": {
-      "provider": "elevenlabs",
-      "elevenlabs": { "voiceId": "EXAVITQu4vr4xnSDxMaL" }
-    }
+  "tts": {
+    "provider": "elevenlabs",
+    "elevenlabs": { "voiceId": "EXAVITQu4vr4xnSDxMaL" }
   }
 }
 ```
@@ -79,10 +113,8 @@ Example — enable per-tool narration:
 
 ```json
 {
-  "voice": {
-    "events": {
-      "tool.execute.before": { "enabled": true, "mode": "template" }
-    }
+  "events": {
+    "tool.execute.before": { "enabled": true, "mode": "template" }
   }
 }
 ```
@@ -93,13 +125,11 @@ When `mode: "narrate"` is used, opencode-voice asks a small LLM to produce a one
 
 ```json
 {
-  "voice": {
-    "narrator": {
-      "model": "openai/gpt-4o-mini",
-      "maxTokens": 60,
-      "timeoutMs": 5000,
-      "minIntervalMs": 3000
-    }
+  "narrator": {
+    "model": "openai/gpt-4o-mini",
+    "maxTokens": 60,
+    "timeoutMs": 5000,
+    "minIntervalMs": 3000
   }
 }
 ```

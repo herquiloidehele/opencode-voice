@@ -20,18 +20,20 @@ describe("opencode-voice plugin module shape", () => {
 })
 
 describe("OpencodeVoice plugin", () => {
-  it("returns an empty (no-op) hooks object when OPENCODE_VOICE_DISABLED=1", async () => {
-    const ctx = {
+  const baseCtx = () =>
+    ({
       client: { app: { log: vi.fn().mockResolvedValue(undefined) } },
       directory: "/tmp",
       worktree: "/tmp",
-      project: { config: { voice: {} } },
+      project: { id: "test" },
       $: vi.fn(),
-    } as any
+    }) as any
+
+  it("returns an empty (no-op) hooks object when OPENCODE_VOICE_DISABLED=1", async () => {
     const oldEnv = process.env.OPENCODE_VOICE_DISABLED
     process.env.OPENCODE_VOICE_DISABLED = "1"
     try {
-      const hooks = await OpencodeVoice(ctx)
+      const hooks = await OpencodeVoice(baseCtx(), {})
       expect(hooks).toEqual({})
     } finally {
       if (oldEnv === undefined) delete process.env.OPENCODE_VOICE_DISABLED
@@ -40,14 +42,7 @@ describe("OpencodeVoice plugin", () => {
   })
 
   it("registers an `event` hook that does not throw on unknown events", async () => {
-    const ctx = {
-      client: { app: { log: vi.fn().mockResolvedValue(undefined) } },
-      directory: "/tmp",
-      worktree: "/tmp",
-      project: { config: { voice: { events: {} } } },
-      $: vi.fn(),
-    } as any
-    const hooks = (await OpencodeVoice(ctx)) as any
+    const hooks = (await OpencodeVoice(baseCtx(), { events: {} })) as any
     expect(typeof hooks.event).toBe("function")
     await expect(
       hooks.event({ event: { type: "some.unknown.event" } }),
@@ -55,14 +50,20 @@ describe("OpencodeVoice plugin", () => {
   })
 
   it("registers a `voice` custom tool", async () => {
-    const ctx = {
-      client: { app: { log: vi.fn().mockResolvedValue(undefined) } },
-      directory: "/tmp",
-      worktree: "/tmp",
-      project: { config: { voice: {} } },
-      $: vi.fn(),
-    } as any
-    const hooks = (await OpencodeVoice(ctx)) as any
+    const hooks = (await OpencodeVoice(baseCtx(), {})) as any
     expect(hooks.tool?.voice).toBeDefined()
+  })
+
+  it("accepts options as the second argument (opencode's plugin contract)", async () => {
+    const hooks = (await OpencodeVoice(baseCtx(), {
+      tts: { provider: "openai", openai: { apiKey: "sk-test" } },
+    })) as any
+    // Initialization should succeed (returns hooks object, not {}).
+    expect(typeof hooks.event).toBe("function")
+  })
+
+  it("falls back to defaults when options is undefined", async () => {
+    const hooks = (await OpencodeVoice(baseCtx(), undefined)) as any
+    expect(typeof hooks.event).toBe("function")
   })
 })
