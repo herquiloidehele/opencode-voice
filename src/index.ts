@@ -7,10 +7,10 @@ import { createSystemProvider } from "./tts/system.js"
 import { createOpenAIProvider } from "./tts/openai.js"
 import { createElevenLabsProvider } from "./tts/elevenlabs.js"
 import { createPlayer, type Player } from "./audio/player.js"
-import { createHandlerRegistry } from "./handlers/index.js"
+import { createHandlerRegistry } from "./handlers"
 import { createNarrator } from "./handlers/narrator.js"
 import { createDispatcher } from "./dispatcher.js"
-import { createCommands } from "./commands/index.js"
+import { createCommands } from "./commands"
 
 export { registerProvider } from "./tts/provider.js"
 export type {
