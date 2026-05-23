@@ -123,8 +123,11 @@ Environment flags:
 
 ## Custom Providers
 
+Register custom providers from `opencode-voice/api` (not the main module — the
+main module is reserved for the plugin loader's contract):
+
 ```ts
-import { registerProvider } from "opencode-voice"
+import { registerProvider } from "opencode-voice/api"
 
 registerProvider({
   name: "my-tts",

@@ -1,3 +1,4 @@
+import { z } from "zod"
 import { parseConfig } from "./config.js"
 import { createLogger } from "./log.js"
 import { SpeechQueue } from "./queue/speech-queue.js"
@@ -7,17 +8,17 @@ import { createSystemProvider } from "./tts/system.js"
 import { createOpenAIProvider } from "./tts/openai.js"
 import { createElevenLabsProvider } from "./tts/elevenlabs.js"
 import { createPlayer, type Player } from "./audio/player.js"
-import { createHandlerRegistry } from "./handlers"
+import { createHandlerRegistry } from "./handlers/index.js"
 import { createNarrator } from "./handlers/narrator.js"
 import { createDispatcher } from "./dispatcher.js"
-import { createCommands } from "./commands"
+import { createCommands } from "./commands/index.js"
 
-export { registerProvider } from "./tts/provider.js"
-export type {
-  TTSProvider,
-  SynthesisOptions,
-  SynthesisResult,
-} from "./tts/provider.js"
+// IMPORTANT: do not re-export anything that opencode's plugin loader might
+// mistake for a server plugin. The loader uses the v1 default-export contract
+// `{ id, server }` (see `default` below) — that path skips the legacy scan
+// that would otherwise iterate every module export. Putting public API
+// (registerProvider, types) here would put them in `Object.values(mod)` and
+// could break older loaders. They live in `./api.ts` instead.
 
 type PluginCtx = {
   client: {
@@ -234,8 +235,11 @@ async function initPlugin(ctx: PluginCtx) {
     tool: {
       voice: {
         description:
-          "Control the opencode-voice plugin: mute, unmute, say text, test, or report status.",
-        args: {},
+          "Control the opencode-voice plugin. Actions: mute (silence + drop queue), unmute, say (speak arbitrary text), test (canned line for verifying audio), status (report provider, voice, mute state, queue size).",
+        args: {
+          action: z.enum(["mute", "unmute", "say", "test", "status"]),
+          text: z.string().optional(),
+        },
         async execute(args: {
           action: "mute" | "unmute" | "say" | "test" | "status"
           text?: string
@@ -264,4 +268,13 @@ async function initPlugin(ctx: PluginCtx) {
   }
 }
 
-export default OpencodeVoice
+/**
+ * Default export uses opencode's v1 plugin contract: `{ id, server }`.
+ * The loader detects this shape and skips the legacy export-scan path,
+ * which otherwise treats every exported function as a separate plugin
+ * and would call `registerProvider(input, options)` by mistake.
+ */
+export default {
+  id: "opencode-voice",
+  server: OpencodeVoice,
+}

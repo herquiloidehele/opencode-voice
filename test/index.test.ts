@@ -1,5 +1,23 @@
 import { describe, it, expect, vi } from "vitest"
-import { OpencodeVoice } from "../src/index.js"
+import OpencodeVoiceDefault, { OpencodeVoice } from "../src/index.js"
+
+describe("opencode-voice plugin module shape", () => {
+  it("default-exports a v1 plugin module ({ id, server })", () => {
+    expect(OpencodeVoiceDefault).toMatchObject({
+      id: "opencode-voice",
+      server: expect.any(Function),
+    })
+    expect(OpencodeVoiceDefault.server).toBe(OpencodeVoice)
+  })
+
+  it("module does not export anything other than the plugin function and its default", async () => {
+    // Critical for compatibility with opencode's legacy plugin scanner.
+    // Any additional exported function would be invoked as a separate plugin.
+    const mod = await import("../src/index.js")
+    const exportedKeys = Object.keys(mod).filter((k) => k !== "default")
+    expect(exportedKeys).toEqual(["OpencodeVoice"])
+  })
+})
 
 describe("OpencodeVoice plugin", () => {
   it("returns an empty (no-op) hooks object when OPENCODE_VOICE_DISABLED=1", async () => {
