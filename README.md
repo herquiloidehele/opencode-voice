@@ -175,6 +175,37 @@ Then in config:
 { "voice": { "tts": { "provider": "my-tts" } } }
 ```
 
+## Local Development & Validation
+
+Five runnable demo scripts let you exercise each feature without booting opencode. All use `tsx` (no separate build step needed) and call into the source directly.
+
+| Script | What it validates |
+|---|---|
+| `npm run demo:say -- "text"` | Synthesis + playback for any provider. Add `--provider=openai --voice=nova` (needs `OPENAI_API_KEY`). |
+| `npm run demo:queue` | The speech queue's priority interrupt + dedup behavior. You should hear interruption mid-sentence and three deduped requests collapse to one. |
+| `npm run demo:event -- <event.type>` | The full event-to-audio pipeline. Examples: `session.idle`, `session.error --message="boom"`, `permission.asked --tool=write`, `todo.completed.all`. Enable normally-off events with `--enable=tool.execute.before`. |
+| `npm run demo:narrator -- --assistant-text="..." --tool=bash` | The LLM narrator handler. Needs `OPENAI_API_KEY`. Prints + speaks the generated summary. Use `--no-speak` to print only. |
+| `npm run demo:config -- '{...json...}'` or `--file=path.json` or `--defaults` | Validates a config block against the Zod schema and prints the resolved (defaults-applied) result. |
+
+Plus the standard verification commands:
+
+```bash
+npm test               # full unit + integration suite (88 tests)
+npm test -- speech-queue.test.ts   # one specific suite
+npm run typecheck      # TypeScript validation
+npm run build          # produce dist/
+```
+
+### Recommended local validation flow
+
+When you change something, run in this order:
+
+1. **`npm test`** — catches regressions in the affected module.
+2. **`npm run demo:<feature>`** — audibly confirms the feature still does what you expect.
+3. **Restart opencode against your local plugin** (`rm -rf ~/.cache/opencode/node_modules/opencode-voice && npm run build && restart opencode`).
+
+---
+
 ## Troubleshooting
 
 **No audio on Linux:** install `speech-dispatcher` (`sudo apt install speech-dispatcher`) or `espeak`. For cloud-provider audio playback, install `pulseaudio-utils` (provides `paplay`) or `alsa-utils` (`aplay`) or `ffmpeg` (`ffplay`).
