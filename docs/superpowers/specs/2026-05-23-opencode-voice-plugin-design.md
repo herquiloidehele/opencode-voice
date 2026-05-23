@@ -82,7 +82,7 @@ dispatcher.ts ── (config: event enabled?) ─── no ──► drop
    ▼
 handlers/index.ts ── pick handler by event type + configured mode
    │
-   ├──► template.ts ──► returns SpeechRequest synchronously
+   ├──► template.ts ──► returns SpeechRequest (resolves immediately)
    │
    └──► narrator.ts ──► async LLM call (with timeout, token cap)
                          │
@@ -155,7 +155,7 @@ export interface TTSProvider {
 
 | Provider | Implementation | Notes |
 |---|---|---|
-| `system` (default) | Bun `$` shell-out. macOS: `say -v <voice>`. Linux: `spd-say` then fallback `espeak`. Windows: PowerShell `System.Speech.Synthesis.SpeechSynthesizer`. | Auto-detects OS during `init()`. If no supported binary is found, logs a one-time warning and self-disables the plugin. On macOS and Linux this provider does its own audio output; the audio player module is bypassed. |
+| `system` (default) | Bun `$` shell-out. macOS: `say -v <voice>`. Linux: `spd-say` then fallback `espeak`. Windows: PowerShell `System.Speech.Synthesis.SpeechSynthesizer`. | Auto-detects OS during `init()`. If no supported binary is found, logs a one-time warning and self-disables the plugin. On all three OSes this provider produces audio itself; the audio player module is bypassed. |
 | `openai` | `POST /v1/audio/speech` | Voices: `alloy`, `echo`, `fable`, `onyx`, `nova`, `shimmer`. Reads `OPENAI_API_KEY` from env or config. Streams MP3. |
 | `elevenlabs` | `POST /v1/text-to-speech/{voice_id}` | Reads `ELEVENLABS_API_KEY` from env or config. Requires `voiceId` in config. Streams MP3. |
 
@@ -208,6 +208,8 @@ const templates: Record<string, (e: Event) => string | null> = {
 ```
 
 Templates are not user-overridable in v1.
+
+**Note on event names:** opencode's plugin API exposes a single `todo.updated` event. The dispatcher derives two internal sub-events from it — `todo.completed.all` (fires when every todo transitions to `completed`) and `todo.completed.item` (fires once per individual completion transition) — and these are what the handler registry and config keys reference. All other event names in this spec map directly to opencode plugin events as documented at https://opencode.ai/docs/plugins/#events.
 
 ### 4.2 Narrator Handler (`src/handlers/narrator.ts`)
 
