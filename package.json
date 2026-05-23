@@ -1,6 +1,6 @@
 {
   "name": "opencode-voice",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Voice plugin for opencode — speaks agent events through pluggable TTS backends.",
   "type": "module",
   "main": "./dist/index.js",
@@ -8,7 +8,6 @@
   "exports": {
     ".": { "import": "./dist/index.js", "types": "./dist/index.d.ts" }
   },
-  "bin": { "opencode-voice": "./dist/cli.js" },
   "files": ["dist", "README.md"],
   "scripts": {
     "build": "tsup",

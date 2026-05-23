@@ -31,6 +31,23 @@ type PluginCtx = {
 }
 
 export const OpencodeVoice = async (ctx: PluginCtx) => {
+  try {
+    return await initPlugin(ctx)
+  } catch (err) {
+    // Last-line-of-defense: never let plugin failure crash opencode startup.
+    try {
+      const logger = createLogger(ctx.client as any, "opencode-voice")
+      await logger.error("opencode-voice failed to initialize; plugin disabled", {
+        error: String(err),
+      })
+    } catch {
+      /* logger itself failed; nothing we can safely do */
+    }
+    return {}
+  }
+}
+
+async function initPlugin(ctx: PluginCtx) {
   const logger = createLogger(ctx.client as any, "opencode-voice")
   const rawConfig = (ctx.project?.config as any)?.voice ?? {}
   const parsed = parseConfig(rawConfig)
