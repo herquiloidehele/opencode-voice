@@ -1,5 +1,7 @@
 # AI SDK for Narrator and TTS — Design
 
+> **Historical note (2026-05-24):** This document predates the rename of the plugin package from `opencode-voice-tts` to `opencode-speaker` (see `docs/superpowers/plans/2026-05-24-rename-to-opencode-speaker.md`). Only the plugin identity changed; the `tts.voice` config field and `OPENCODE_VOICE_*` env vars referenced below are unchanged. Substitute `opencode-speaker` wherever you see the old package name.
+
 Date: 2026-05-24
 Status: Approved, ready for plan
 Target version: `0.2.0` (breaking)

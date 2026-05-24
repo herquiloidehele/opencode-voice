@@ -12,7 +12,7 @@
  * Pass --enable=<event-type> repeatedly to turn on events that are off by default.
  */
 
-import OpencodeVoiceDefault from "../src/index.js"
+import OpencodeSpeakerDefault from "../src/index.js"
 
 const args = process.argv.slice(2)
 const eventType = args.find((a) => !a.startsWith("--"))
@@ -69,7 +69,7 @@ const ctx = {
   $: () => {},
 }
 
-const hooks: any = await OpencodeVoiceDefault.server(ctx as any, options)
+const hooks: any = await OpencodeSpeakerDefault.server(ctx as any, options)
 if (!hooks.event) {
   console.error("Plugin returned no event hook (was it disabled?).")
   process.exit(1)

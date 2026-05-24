@@ -1,8 +1,8 @@
 /**
- * Boot the opencode-voice-tts plugin against a mock opencode context and verify
+ * Boot the opencode-speaker plugin against a mock opencode context and verify
  * that the startup greeting fires end-to-end.
  *
- * This calls `OpencodeVoice()` the same way opencode does (ctx + options),
+ * This calls `OpencodeSpeaker()` the same way opencode does (ctx + options),
  * so it exercises the real provider init, queue wiring, and `commands.say()`
  * code path that the greeting uses.
  *
@@ -26,7 +26,7 @@
  *   OPENCODE_VOICE_DISABLED=1   skip plugin entirely
  */
 
-import { OpencodeVoice } from "../src/index.js"
+import { OpencodeSpeaker } from "../src/index.js"
 
 const args = process.argv.slice(2)
 function flag(name: string): string | undefined {
@@ -84,7 +84,7 @@ if (process.env.OPENCODE_VOICE_DISABLED === "1") {
   console.error("[greet] OPENCODE_VOICE_DISABLED=1 set; plugin should no-op")
 }
 
-const hooks = (await OpencodeVoice(ctx as any, options)) as Record<string, unknown>
+const hooks = (await OpencodeSpeaker(ctx as any, options)) as Record<string, unknown>
 
 if (Object.keys(hooks).length === 0) {
   console.error("[greet] plugin returned no hooks (disabled or init failed). Exiting.")

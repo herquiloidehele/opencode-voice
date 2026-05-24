@@ -1,5 +1,7 @@
 # AI SDK for Narrator and TTS Implementation Plan
 
+> **Historical note (2026-05-24):** This document predates the rename of the plugin package from `opencode-voice-tts` to `opencode-speaker` (see `docs/superpowers/plans/2026-05-24-rename-to-opencode-speaker.md`). Only the plugin identity changed; the `tts.voice` config field and `OPENCODE_VOICE_*` env vars referenced below are unchanged. Substitute `opencode-speaker` wherever you see the old package name.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Replace the narrator's hand-rolled chat-completions client and the hand-rolled OpenAI/ElevenLabs TTS providers with Vercel AI SDK calls, using a unified `provider/model` slug config format.

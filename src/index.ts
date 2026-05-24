@@ -36,14 +36,14 @@ type PluginCtx = {
 
 type PluginOptions = Record<string, unknown> | undefined
 
-export const OpencodeVoice = async (ctx: PluginCtx, options?: PluginOptions) => {
+export const OpencodeSpeaker = async (ctx: PluginCtx, options?: PluginOptions) => {
   try {
     return await initPlugin(ctx, options)
   } catch (err) {
     // Last-line-of-defense: never let plugin failure crash opencode startup.
     try {
-      const logger = createLogger(ctx.client as any, "opencode-voice-tts")
-      await logger.error("opencode-voice-tts failed to initialize; plugin disabled", {
+      const logger = createLogger(ctx.client as any, "opencode-speaker")
+      await logger.error("opencode-speaker failed to initialize; plugin disabled", {
         error: String(err),
       })
     } catch {
@@ -54,9 +54,9 @@ export const OpencodeVoice = async (ctx: PluginCtx, options?: PluginOptions) => 
 }
 
 async function initPlugin(ctx: PluginCtx, options?: PluginOptions) {
-  const logger = createLogger(ctx.client as any, "opencode-voice-tts")
+  const logger = createLogger(ctx.client as any, "opencode-speaker")
   // opencode passes per-plugin config as the second argument when the user
-  // declares the plugin in tuple form: ["opencode-voice-tts", { ...options }].
+  // declares the plugin in tuple form: ["opencode-speaker", { ...options }].
   // We accept any user object and let parseConfig validate + apply defaults.
   const rawConfig = options ?? {}
   const parsed = parseConfig(rawConfig)
@@ -68,7 +68,7 @@ async function initPlugin(ctx: PluginCtx, options?: PluginOptions) {
   const config = parsed.config
 
   if (!config.enabled) {
-    await logger.info("opencode-voice-tts disabled by config or env")
+    await logger.info("opencode-speaker disabled by config or env")
     return {}
   }
 
@@ -218,7 +218,7 @@ async function initPlugin(ctx: PluginCtx, options?: PluginOptions) {
   })
   if (config.startMuted) commands.mute()
 
-  await logger.info(`opencode-voice-tts ready (provider=${resolvedSpeech.provider})`)
+  await logger.info(`opencode-speaker ready (provider=${resolvedSpeech.provider})`)
 
   if (config.greeting.trim().length > 0 && !config.startMuted) {
     commands.say(config.greeting)
@@ -245,7 +245,7 @@ async function initPlugin(ctx: PluginCtx, options?: PluginOptions) {
     tool: {
       voice: {
         description:
-          "Control the opencode-voice-tts plugin. Actions: mute (silence + drop queue), unmute, say (speak arbitrary text), test (canned line for verifying audio), status (report provider, voice, mute state, queue size).",
+          "Control the opencode-speaker plugin. Actions: mute (silence + drop queue), unmute, say (speak arbitrary text), test (canned line for verifying audio), status (report provider, voice, mute state, queue size).",
         args: {
           action: z.enum(["mute", "unmute", "say", "test", "status"]),
           text: z.string().optional(),
@@ -282,13 +282,13 @@ async function initPlugin(ctx: PluginCtx, options?: PluginOptions) {
  * Default export is the plugin function itself, matching the current
  * `@opencode-ai/plugin` contract (see ExamplePlugin / FolderWorkspacePlugin).
  *
- * History: this used to be `{ id, server: OpencodeVoice }` to satisfy an
+ * History: this used to be `{ id, server: OpencodeSpeaker }` to satisfy an
  * older "v1" loader shape. Newer opencode releases reject that as
  * "does not expose a server entrypoint" — the loader expects the default
  * export to be the async plugin function directly.
  *
- * `index.ts` deliberately has no other exports beyond `OpencodeVoice` and
+ * `index.ts` deliberately has no other exports beyond `OpencodeSpeaker` and
  * this default, so the loader's named-export scan (if any) does not invoke
  * a second plugin instance. Public API lives in `./api.ts`.
  */
-export default OpencodeVoice
+export default OpencodeSpeaker

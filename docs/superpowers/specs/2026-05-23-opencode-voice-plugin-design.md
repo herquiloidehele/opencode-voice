@@ -1,5 +1,7 @@
 # opencode-voice — Design Spec
 
+> **Historical note (2026-05-24):** This document predates the rename of the plugin package from `opencode-voice-tts` to `opencode-speaker` (see `docs/superpowers/plans/2026-05-24-rename-to-opencode-speaker.md`). Only the plugin identity changed; the `tts.voice` config field, `OPENCODE_VOICE_*` env vars, the `voice` custom tool, and the `VoiceConfig`/`VoiceStatus` internal types are unchanged. Substitute `opencode-speaker` wherever you see the old package name below.
+
 **Date:** 2026-05-23
 **Status:** Draft, pending implementation plan
 **Package:** `opencode-voice` (npm)
