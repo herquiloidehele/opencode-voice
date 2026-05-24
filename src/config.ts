@@ -50,19 +50,34 @@ const VoiceConfigSchema = z.object({
 export type VoiceConfig = z.infer<typeof VoiceConfigSchema>
 export type EventConfig = z.infer<typeof EventConfigSchema>
 
+// Event keys come in two flavors:
+//   1. Real OpenCode plugin events as documented at
+//      https://opencode.ai/docs/plugins/#events — these are dispatched by
+//      opencode itself and reach us via the `event` hook in src/index.ts.
+//   2. Plugin-internal synthesized events — fired by src/dispatcher.ts when
+//      it derives higher-level signals from raw events. These are NOT in the
+//      opencode docs but are valid configuration keys for this plugin.
+//      Currently synthesized:
+//        - "todo.completed.item" / "todo.completed.all" (from `todo.updated`)
 const DEFAULT_EVENTS: Record<
   string,
   { enabled: boolean; mode: "template" | "narrate" | "verbatim"; priority?: "urgent" | "normal" | "chatty" }
 > = {
+  // --- Real OpenCode events ---
   "session.idle":         { enabled: true,  mode: "narrate" },
   "session.error":        { enabled: true,  mode: "template", priority: "urgent" },
   "session.compacted":    { enabled: true,  mode: "template" },
+  "session.created":      { enabled: true,  mode: "template" },
   "permission.asked":     { enabled: true,  mode: "template", priority: "urgent" },
+  "permission.replied":   { enabled: true,  mode: "template" },
+  "tool.execute.before":  { enabled: true,  mode: "template" },
+  "tool.execute.after":   { enabled: true,  mode: "template" },
+  "file.edited":          { enabled: true,  mode: "template" },
+  "command.executed":     { enabled: true,  mode: "template" },
+  "message.updated":      { enabled: false, mode: "verbatim" },
+  "message.part.updated": { enabled: false, mode: "verbatim" },
+  "todo.completed.item":  { enabled: true,  mode: "template" },
   "todo.completed.all":   { enabled: true,  mode: "narrate" },
-  "todo.completed.item":  { enabled: true, mode: "template" },
-  "tool.execute.before":  { enabled: true, mode: "template" },
-  "tool.execute.after":   { enabled: true, mode: "template" },
-  "message.updated":      { enabled: true, mode: "verbatim" },
 }
 
 export const DEFAULT_CONFIG: VoiceConfig = VoiceConfigSchema.parse({ events: DEFAULT_EVENTS })

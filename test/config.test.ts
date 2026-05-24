@@ -92,11 +92,24 @@ describe("DEFAULT_CONFIG", () => {
       .map(([k]) => k)
       .sort()
     expect(enabled).toEqual([
+      "command.executed",
+      "file.edited",
       "permission.asked",
+      "permission.replied",
       "session.compacted",
+      "session.created",
       "session.error",
       "session.idle",
       "todo.completed.all",
+      "todo.completed.item",
+      "tool.execute.after",
+      "tool.execute.before",
     ])
+  })
+
+  it("leaves verbatim message streaming opt-in", () => {
+    expect(DEFAULT_CONFIG.events["message.updated"].enabled).toBe(false)
+    expect(DEFAULT_CONFIG.events["message.part.updated"].enabled).toBe(false)
+    expect(DEFAULT_CONFIG.events["message.part.updated"].mode).toBe("verbatim")
   })
 })

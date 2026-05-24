@@ -56,7 +56,7 @@ describe("handler registry", () => {
       getContext: () => ({ assistantText: "x", recentTools: [] }),
     })
     const sr = await r.handle({ type: "session.idle" })
-    expect(sr?.text).toBe("Session idle.")
+    expect(sr?.text).toBe("Session idle. Awaiting your next instruction.")
   })
 
   it("returns null when template has no entry and narrator returns null", async () => {
