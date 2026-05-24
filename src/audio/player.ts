@@ -41,7 +41,7 @@ export function createPlayer(opts: PlayerOptions): Player {
       : contentType.includes("wav")
         ? "wav"
         : "bin"
-    const dir = await mkdtemp(join(tmpdir(), "opencode-voice-"))
+    const dir = await mkdtemp(join(tmpdir(), "opencode-voice-tts-"))
     const path = join(dir, `audio.${ext}`)
     await writeFile(path, buf)
     return path

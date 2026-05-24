@@ -1,4 +1,4 @@
-# opencode-voice
+# opencode-voice-tts
 
 Voice plugin for [opencode](https://opencode.ai). Speaks agent activity through pluggable text-to-speech backends — works offline with your OS's built-in voice, or with OpenAI / ElevenLabs for higher quality.
 
@@ -9,7 +9,7 @@ Voice plugin for [opencode](https://opencode.ai). Speaks agent activity through 
 ```json
 {
   "$schema": "https://opencode.ai/config.json",
-  "plugin": ["opencode-voice"]
+  "plugin": ["opencode-voice-tts"]
 }
 ```
 
@@ -27,13 +27,13 @@ array — *not* as a top-level key. Don't put `"voice": { … }` at the top of
 ```json
 {
   "plugin": [
-    ["opencode-voice", { "tts": { "provider": "system", "voice": "Samantha" } }]
+    ["opencode-voice-tts", { "tts": { "provider": "system", "voice": "Samantha" } }]
   ]
 }
 ```
 
 All configuration snippets below show the **inner options object** (the
-second element of that tuple). Put them inside `["opencode-voice", { … }]`.
+second element of that tuple). Put them inside `["opencode-voice-tts", { … }]`.
 
 Full example:
 
@@ -42,7 +42,7 @@ Full example:
   "$schema": "https://opencode.ai/config.json",
   "plugin": [
     [
-      "opencode-voice",
+      "opencode-voice-tts",
       {
         "tts": { "provider": "system", "voice": "Samantha", "rate": 1.0 },
         "narrator": { "model": "openai/gpt-4o-mini" },
@@ -139,7 +139,7 @@ Example — enable per-tool narration:
 
 ## Narrator Model
 
-When `mode: "narrate"` is used, opencode-voice asks a small LLM to produce a one-sentence summary. Configure it:
+When `mode: "narrate"` is used, opencode-voice-tts asks a small LLM to produce a one-sentence summary. Configure it:
 
 ```json
 {
@@ -171,11 +171,11 @@ Environment flags:
 
 ## Custom Providers
 
-Register custom providers from `opencode-voice/api` (not the main module — the
+Register custom providers from `opencode-voice-tts/api` (not the main module — the
 main module is reserved for the plugin loader's contract):
 
 ```ts
-import { registerProvider } from "opencode-voice/api"
+import { registerProvider } from "opencode-voice-tts/api"
 
 registerProvider({
   name: "my-tts",
@@ -220,7 +220,7 @@ When you change something, run in this order:
 
 1. **`npm test`** — catches regressions in the affected module.
 2. **`npm run demo:<feature>`** — audibly confirms the feature still does what you expect.
-3. **Restart opencode against your local plugin** (`rm -rf ~/.cache/opencode/node_modules/opencode-voice && npm run build && restart opencode`).
+3. **Restart opencode against your local plugin** (`rm -rf ~/.cache/opencode/node_modules/opencode-voice-tts && npm run build && restart opencode`).
 
 ---
 
@@ -232,7 +232,7 @@ When you change something, run in this order:
 
 **System voice not found on macOS:** list available voices with `say -v ?`. Some voices need to be downloaded via System Settings → Spoken Content.
 
-**Plugin self-disables silently:** check opencode's log file — `opencode-voice` errors are logged at `error` / `warn` level via opencode's logging.
+**Plugin self-disables silently:** check opencode's log file — `opencode-voice-tts` errors are logged at `error` / `warn` level via opencode's logging.
 
 ## License
 

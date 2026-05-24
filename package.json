@@ -1,5 +1,5 @@
 {
-  "name": "opencode-voice",
+  "name": "opencode-voice-tts",
   "version": "0.1.4",
   "description": "Voice plugin for opencode — speaks agent events through pluggable TTS backends.",
   "type": "module",
@@ -28,7 +28,8 @@
     "demo:queue": "tsx scripts/queue.ts",
     "demo:event": "tsx scripts/event.ts",
     "demo:narrator": "tsx scripts/narrator.ts",
-    "demo:config": "tsx scripts/config.ts"
+    "demo:config": "tsx scripts/config.ts",
+    "demo:greet": "tsx scripts/greet.ts"
   },
   "dependencies": {
     "zod": "^3.23.0"
