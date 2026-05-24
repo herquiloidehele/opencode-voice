@@ -10,7 +10,6 @@ export interface NarratorClient {
     completions: {
       create: (req: {
         model: string
-        max_tokens: number
         temperature?: number
         messages: { role: "user" | "system"; content: string }[]
       }) => Promise<{ choices: { message: { content: string } }[] }>
@@ -20,7 +19,6 @@ export interface NarratorClient {
 
 export interface NarratorConfig {
   model: string
-  maxTokens: number
   timeoutMs: number
   minIntervalMs: number
 }
@@ -43,8 +41,17 @@ export function createNarrator(client: NarratorClient, config: NarratorConfig): 
         ? "all todos are now complete"
         : "just finished a turn"
     return [
-      "You are a brief spoken status narrator for a coding agent.",
-      `The agent ${occasion}. Summarize what happened in ONE sentence, under 25 words, spoken style (no markdown, no code, no quotes).`,
+      "You are a spoken status narrator for a coding agent. Your output is read aloud by a TTS engine.",
+      `The agent ${occasion}. Explain what actually happened so the user can keep their eyes off the screen:`,
+      "- what was attempted, what tools were used, what changed, and the outcome,",
+      "- any blockers, errors, or decisions that need the user's attention,",
+      "- next steps if obvious.",
+      "",
+      "Style rules:",
+      "- spoken English only — no markdown, no code blocks, no quotes, no bullet points,",
+      "- plain prose, natural sentences, no filler or restatement of these instructions,",
+      "- be concise: every sentence must add information, but do not omit anything the user needs to know,",
+      "- skip greetings, sign-offs, and meta commentary about being an AI.",
       "",
       "Recent assistant output:",
       text || "(none)",
@@ -65,7 +72,6 @@ export function createNarrator(client: NarratorClient, config: NarratorConfig): 
         const result = await Promise.race([
           client.chat.completions.create({
             model: config.model,
-            max_tokens: config.maxTokens,
             temperature: 0.3,
             messages: [{ role: "user", content: prompt }],
           }),

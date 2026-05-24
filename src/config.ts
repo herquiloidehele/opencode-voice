@@ -26,7 +26,6 @@ const TTSSchema = z.object({
 
 const NarratorSchema = z.object({
   model: z.string().default("anthropic/claude-haiku-4"),
-  maxTokens: z.number().int().positive().default(60),
   timeoutMs: z.number().int().positive().default(5000),
   minIntervalMs: z.number().int().min(0).default(3000),
 }).default({})

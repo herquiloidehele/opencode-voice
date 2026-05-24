@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest"
 import { createNarrator } from "../src/handlers/narrator.js"
 
-const baseConfig = { model: "test/narrator", maxTokens: 60, timeoutMs: 1000, minIntervalMs: 0 }
+const baseConfig = { model: "test/narrator", timeoutMs: 1000, minIntervalMs: 0 }
 
 function ctx(text: string) {
   return { assistantText: text, recentTools: [] as string[] }
@@ -19,7 +19,7 @@ describe("narrator", () => {
     expect(create).toHaveBeenCalledOnce()
     const args = create.mock.calls[0][0]
     expect(args.model).toBe("test/narrator")
-    expect(args.max_tokens).toBe(60)
+    expect(args.max_tokens).toBeUndefined()
     expect(args.messages[0].content).toContain("did stuff")
   })
 

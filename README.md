@@ -139,20 +139,19 @@ Example — enable per-tool narration:
 
 ## Narrator Model
 
-When `mode: "narrate"` is used, opencode-voice-tts asks a small LLM to produce a one-sentence summary. Configure it:
+When `mode: "narrate"` is used, opencode-voice-tts asks a small LLM to produce a concise spoken explanation of what just happened. Configure it:
 
 ```json
 {
   "narrator": {
     "model": "openai/gpt-4o-mini",
-    "maxTokens": 60,
     "timeoutMs": 5000,
     "minIntervalMs": 3000
   }
 }
 ```
 
-The narrator is hard-capped at 60 tokens and will fall back to a template if the call fails or is too frequent.
+The narrator is prompted to be concise but cover everything important — attempted actions, tools used, outcomes, blockers, and obvious next steps. No token cap is sent to the model; rate-limiting is controlled by `minIntervalMs`, and the handler falls back to a template if the call fails or is throttled.
 
 ## Controls
 

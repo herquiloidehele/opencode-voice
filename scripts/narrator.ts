@@ -69,7 +69,6 @@ const client = {
 
 const narrator = createNarrator(client, {
   model,
-  maxTokens: 60,
   timeoutMs: 10_000,
   minIntervalMs: 0,
 })
