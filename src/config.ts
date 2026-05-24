@@ -16,7 +16,7 @@ const TTSSchema = z.object({
   pitch: z.number().min(0.5).max(2.0).default(1.0),
   openai: z.object({
     apiKey: z.string().optional(),
-    model: z.string().default("tts-1"),
+    model: z.string().default("gpt-4o-mini-tts"),
   }).optional(),
   elevenlabs: z.object({
     apiKey: z.string().optional(),
@@ -59,10 +59,10 @@ const DEFAULT_EVENTS: Record<
   "session.compacted":    { enabled: true,  mode: "template" },
   "permission.asked":     { enabled: true,  mode: "template", priority: "urgent" },
   "todo.completed.all":   { enabled: true,  mode: "narrate" },
-  "todo.completed.item":  { enabled: false, mode: "template" },
-  "tool.execute.before":  { enabled: false, mode: "template" },
-  "tool.execute.after":   { enabled: false, mode: "template" },
-  "message.updated":      { enabled: false, mode: "verbatim" },
+  "todo.completed.item":  { enabled: true, mode: "template" },
+  "tool.execute.before":  { enabled: true, mode: "template" },
+  "tool.execute.after":   { enabled: true, mode: "template" },
+  "message.updated":      { enabled: true, mode: "verbatim" },
 }
 
 export const DEFAULT_CONFIG: VoiceConfig = VoiceConfigSchema.parse({ events: DEFAULT_EVENTS })
