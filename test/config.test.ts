@@ -56,6 +56,24 @@ describe("parseConfig", () => {
     if (result.ok) expect(result.config.tts.openai?.apiKey).toBe("sk-env")
   })
 
+  it("defaults greeting to 'opencode voice ready'", () => {
+    const result = parseConfig({})
+    expect(result.ok).toBe(true)
+    if (result.ok) expect(result.config.greeting).toBe("opencode voice ready")
+  })
+
+  it("allows overriding the greeting string", () => {
+    const result = parseConfig({ greeting: "hello there" })
+    expect(result.ok).toBe(true)
+    if (result.ok) expect(result.config.greeting).toBe("hello there")
+  })
+
+  it("allows disabling greeting via empty string", () => {
+    const result = parseConfig({ greeting: "" })
+    expect(result.ok).toBe(true)
+    if (result.ok) expect(result.config.greeting).toBe("")
+  })
+
   it("preserves unknown event keys for forward compat", () => {
     const result = parseConfig({
       events: { "future.event.type": { enabled: true, mode: "template" } },

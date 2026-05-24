@@ -40,6 +40,7 @@ const EventsSchema = z.record(z.string(), EventConfigSchema).default({})
 const VoiceConfigSchema = z.object({
   enabled: z.boolean().default(true),
   startMuted: z.boolean().default(false),
+  greeting: z.string().default("opencode voice ready"),
   tts: TTSSchema,
   narrator: NarratorSchema,
   events: EventsSchema,

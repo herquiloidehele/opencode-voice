@@ -93,6 +93,24 @@ Set `OPENAI_API_KEY` in your environment, or `tts.openai.apiKey` in config.
 
 Set `ELEVENLABS_API_KEY` in env or config.
 
+## Startup Greeting
+
+The plugin speaks a short greeting once after it finishes initializing. Defaults to `"opencode voice ready"`.
+
+```json
+{
+  "greeting": "welcome back"
+}
+```
+
+Set to an empty string to disable:
+
+```json
+{ "greeting": "" }
+```
+
+The greeting is automatically skipped when `startMuted` is `true` or `OPENCODE_VOICE_MUTE=1` is set.
+
 ## Event Configuration
 
 Every event is independently configurable. Defaults:
@@ -190,7 +208,7 @@ Five runnable demo scripts let you exercise each feature without booting opencod
 Plus the standard verification commands:
 
 ```bash
-npm test               # full unit + integration suite (88 tests)
+npm test               # full unit + integration suite (93 tests)
 npm test -- speech-queue.test.ts   # one specific suite
 npm run typecheck      # TypeScript validation
 npm run build          # produce dist/

@@ -211,6 +211,10 @@ async function initPlugin(ctx: PluginCtx, options?: PluginOptions) {
 
   await logger.info(`opencode-voice ready (provider=${config.tts.provider})`)
 
+  if (config.greeting.trim().length > 0 && !config.startMuted) {
+    commands.say(config.greeting)
+  }
+
   return {
     event: async ({
       event,
