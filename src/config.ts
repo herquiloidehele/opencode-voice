@@ -59,6 +59,8 @@ export type EventConfig = z.infer<typeof EventConfigSchema>
 //      opencode docs but are valid configuration keys for this plugin.
 //      Currently synthesized:
 //        - "todo.completed.item" / "todo.completed.all" (from `todo.updated`)
+//        - "message.text.delta" / "message.reasoning.delta" (from per-sentence
+//          deltas of `message.part.updated` text and reasoning parts).
 const DEFAULT_EVENTS: Record<
   string,
   { enabled: boolean; mode: "template" | "narrate" | "verbatim"; priority?: "urgent" | "normal" | "chatty" }
@@ -75,9 +77,10 @@ const DEFAULT_EVENTS: Record<
   "file.edited":          { enabled: true,  mode: "template" },
   "command.executed":     { enabled: true,  mode: "template" },
   "message.updated":      { enabled: false, mode: "verbatim" },
-  "message.part.updated": { enabled: false, mode: "verbatim" },
-  "todo.completed.item":  { enabled: true,  mode: "template" },
-  "todo.completed.all":   { enabled: true,  mode: "narrate" },
+  "message.reasoning.delta": { enabled: true,  mode: "verbatim", priority: "chatty" },
+  "message.text.delta":      { enabled: false, mode: "verbatim", priority: "chatty" },
+  "todo.completed.item":     { enabled: true,  mode: "template" },
+  "todo.completed.all":      { enabled: true,  mode: "narrate" },
 }
 
 export const DEFAULT_CONFIG: VoiceConfig = VoiceConfigSchema.parse({ events: DEFAULT_EVENTS })

@@ -70,9 +70,10 @@ const templates: Record<string, Renderer> = {
     return name ? `Command ${name} executed.` : "Command executed."
   },
   "message.updated":      (e) => truncate(stripMarkdown(String(e.text ?? "")), 600),
-  "message.part.updated": (e) => truncate(stripMarkdown(String(e.text ?? "")), 600),
 
   // --- Synthesized by src/dispatcher.ts ---
+  "message.text.delta":      (e) => truncate(stripMarkdown(String(e.text ?? "")), 600),
+  "message.reasoning.delta": (e) => truncate(stripMarkdown(String(e.text ?? "")), 600),
   "todo.completed.all":   (e) => {
     const n = Number(e.count ?? 0)
     return n > 0

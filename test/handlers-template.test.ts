@@ -84,19 +84,35 @@ describe("renderTemplate", () => {
     expect(renderTemplate({ type: "unknown.event" })).toBeNull()
   })
 
-  it("formats message.updated / message.part.updated with stripped markdown", () => {
+  it("formats message.updated with stripped markdown", () => {
     expect(
       renderTemplate({ type: "message.updated", text: "**Bold** and `code` text" }),
     ).toBe("Bold and code text")
-    expect(
-      renderTemplate({ type: "message.part.updated", text: "*streaming* token" }),
-    ).toBe("streaming token")
+  })
+
+  it("has no template for the raw message.part.updated event", () => {
+    expect(renderTemplate({ type: "message.part.updated" })).toBeNull()
   })
 
   it("formats session.idle with a chatty fallback line", () => {
     expect(renderTemplate({ type: "session.idle" })).toBe(
       "Session idle. Awaiting your next instruction.",
     )
+  })
+
+  it("renders synthesized streaming deltas verbatim (after markdown strip)", () => {
+    expect(
+      renderTemplate({
+        type: "message.reasoning.delta",
+        text: "Let me **think** about this.",
+      }),
+    ).toBe("Let me think about this.")
+    expect(
+      renderTemplate({
+        type: "message.text.delta",
+        text: "Here is the *answer*",
+      }),
+    ).toBe("Here is the answer")
   })
 })
 

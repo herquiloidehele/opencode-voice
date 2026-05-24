@@ -90,4 +90,123 @@ describe("dispatcher", () => {
     } as any)
     await expect(d.onEvent({ type: "session.idle" })).resolves.toBeUndefined()
   })
+
+  it("unwraps OpenCode's { properties } envelope and flattens fields", async () => {
+    const handle = vi.fn().mockResolvedValue(null)
+    const push = vi.fn()
+    const d = createDispatcher({ handler: { handle }, queue: { push } } as any)
+    await d.onEvent({
+      type: "tool.execute.before",
+      properties: { tool: "bash", sessionID: "s1" },
+    })
+    const forwarded = handle.mock.calls.find(
+      ([e]) => e.type === "tool.execute.before",
+    )?.[0]
+    expect(forwarded.tool).toBe("bash")
+    expect(forwarded.sessionID).toBe("s1")
+    // Tool name should also have been tracked in narrator context.
+    expect(d.getContext().recentTools).toContain("bash")
+  })
+
+  it("emits message.reasoning.delta sentence-by-sentence from streaming parts", async () => {
+    const handle = vi.fn().mockResolvedValue(null)
+    const push = vi.fn()
+    const d = createDispatcher({ handler: { handle }, queue: { push } } as any)
+
+    // Three streaming updates of the same reasoning part. Same part.id, text
+    // keeps growing. The dispatcher should only narrate complete sentences,
+    // buffering the trailing fragment.
+    await d.onEvent({
+      type: "message.part.updated",
+      properties: {
+        part: { id: "p1", type: "reasoning", text: "Let me think about " },
+      },
+    })
+    await d.onEvent({
+      type: "message.part.updated",
+      properties: {
+        part: { id: "p1", type: "reasoning", text: "Let me think about this. Now I'll" },
+      },
+    })
+    await d.onEvent({
+      type: "message.part.updated",
+      properties: {
+        part: {
+          id: "p1",
+          type: "reasoning",
+          text: "Let me think about this. Now I'll write the code.",
+        },
+      },
+    })
+
+    const reasoningCalls = handle.mock.calls
+      .map(([e]) => e)
+      .filter((e) => e.type === "message.reasoning.delta")
+    expect(reasoningCalls.map((e) => e.text)).toEqual([
+      "Let me think about this.",
+      "Now I'll write the code.",
+    ])
+    // Each delta gets a unique dedupKey so they queue independently.
+    const keys = reasoningCalls.map((e) => e.dedupKey)
+    expect(new Set(keys).size).toBe(keys.length)
+    expect(reasoningCalls.every((e) => e.partID === "p1")).toBe(true)
+  })
+
+  it("force-flushes a reasoning fragment that grows past the flush threshold", async () => {
+    const handle = vi.fn().mockResolvedValue(null)
+    const push = vi.fn()
+    const d = createDispatcher({
+      handler: { handle },
+      queue: { push },
+      reasoningFlushChars: 40,
+    } as any)
+    // Long fragment with no sentence boundary at all.
+    const text = "a".repeat(80)
+    await d.onEvent({
+      type: "message.part.updated",
+      properties: { part: { id: "p2", type: "reasoning", text } },
+    })
+    const calls = handle.mock.calls
+      .map(([e]) => e)
+      .filter((e) => e.type === "message.reasoning.delta")
+    expect(calls.length).toBeGreaterThan(0)
+    expect(calls[0].text).toContain("a")
+  })
+
+  it("emits message.text.delta for streaming assistant text parts", async () => {
+    const handle = vi.fn().mockResolvedValue(null)
+    const push = vi.fn()
+    const d = createDispatcher({ handler: { handle }, queue: { push } } as any)
+    await d.onEvent({
+      type: "message.part.updated",
+      properties: { part: { id: "t1", type: "text", text: "Hello, " } },
+    })
+    await d.onEvent({
+      type: "message.part.updated",
+      properties: { part: { id: "t1", type: "text", text: "Hello, world!" } },
+    })
+    const deltas = handle.mock.calls
+      .map(([e]) => e)
+      .filter((e) => e.type === "message.text.delta")
+      .map((e) => e.text)
+    expect(deltas).toEqual(["Hello, ", "world!"])
+    // Text deltas also feed the narrator's assistantText context.
+    expect(d.getContext().assistantText).toContain("Hello,")
+    expect(d.getContext().assistantText).toContain("world!")
+  })
+
+  it("ignores non-text/non-reasoning part types", async () => {
+    const handle = vi.fn().mockResolvedValue(null)
+    const push = vi.fn()
+    const d = createDispatcher({ handler: { handle }, queue: { push } } as any)
+    await d.onEvent({
+      type: "message.part.updated",
+      properties: {
+        part: { id: "t1", type: "step-start" },
+      },
+    })
+    const types = handle.mock.calls.map(([e]) => e.type)
+    expect(types).not.toContain("message.text.delta")
+    expect(types).not.toContain("message.reasoning.delta")
+  })
 })

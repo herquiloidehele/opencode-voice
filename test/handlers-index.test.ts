@@ -87,4 +87,27 @@ describe("handler registry", () => {
     const sr = await r.handle({ type: "tool.execute.before", tool: "bash" })
     expect(sr?.priority).toBe(Priority.CHATTY)
   })
+
+  it("honors a per-event dedupKey override (used by streaming deltas)", async () => {
+    const r = createHandlerRegistry({
+      events: {
+        "message.reasoning.delta": { enabled: true, mode: "verbatim" as const },
+      },
+      narrator: fakeNarrator(null),
+      getContext: () => ({ assistantText: "", recentTools: [] }),
+    })
+    const sr1 = await r.handle({
+      type: "message.reasoning.delta",
+      text: "first sentence",
+      dedupKey: "message.reasoning.delta:p1:1",
+    })
+    const sr2 = await r.handle({
+      type: "message.reasoning.delta",
+      text: "second sentence",
+      dedupKey: "message.reasoning.delta:p1:2",
+    })
+    expect(sr1?.dedupKey).toBe("message.reasoning.delta:p1:1")
+    expect(sr2?.dedupKey).toBe("message.reasoning.delta:p1:2")
+    expect(sr1?.dedupKey).not.toBe(sr2?.dedupKey)
+  })
 })

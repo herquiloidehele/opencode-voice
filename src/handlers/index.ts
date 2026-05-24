@@ -20,15 +20,22 @@ export interface HandlerRegistry {
 }
 
 const DEFAULT_PRIORITY: Record<string, Priority> = {
-  "session.idle":         Priority.NORMAL,
-  "session.error":        Priority.URGENT,
-  "session.compacted":    Priority.NORMAL,
-  "permission.asked":     Priority.URGENT,
-  "todo.completed.all":   Priority.NORMAL,
-  "todo.completed.item":  Priority.CHATTY,
-  "tool.execute.before":  Priority.CHATTY,
-  "tool.execute.after":   Priority.CHATTY,
-  "message.updated":      Priority.CHATTY,
+  "session.idle":             Priority.NORMAL,
+  "session.error":            Priority.URGENT,
+  "session.compacted":        Priority.NORMAL,
+  "session.created":          Priority.NORMAL,
+  "permission.asked":         Priority.URGENT,
+  "permission.replied":       Priority.NORMAL,
+  "todo.completed.all":       Priority.NORMAL,
+  "todo.completed.item":      Priority.CHATTY,
+  "tool.execute.before":      Priority.CHATTY,
+  "tool.execute.after":       Priority.CHATTY,
+  "file.edited":              Priority.CHATTY,
+  "command.executed":         Priority.NORMAL,
+  "message.updated":          Priority.CHATTY,
+  "message.part.updated":     Priority.CHATTY,
+  "message.text.delta":       Priority.CHATTY,
+  "message.reasoning.delta":  Priority.CHATTY,
 }
 
 function priorityFromName(name?: string): Priority | null {
@@ -61,11 +68,13 @@ export function createHandlerRegistry(opts: HandlerRegistryOptions): HandlerRegi
         priorityFromName(cfg.priority) ??
         DEFAULT_PRIORITY[event.type] ??
         Priority.NORMAL
+      const overrideKey = (event as Record<string, unknown>).dedupKey
+      const dedupKey = typeof overrideKey === "string" ? overrideKey : event.type
       return {
         id: randomUUID(),
         priority,
         text,
-        dedupKey: event.type,
+        dedupKey,
         enqueuedAt: Date.now(),
       }
     },

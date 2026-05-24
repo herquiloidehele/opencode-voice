@@ -221,19 +221,11 @@ async function initPlugin(ctx: PluginCtx, options?: PluginOptions) {
     }: {
       event: { type: string; [k: string]: unknown }
     }) => {
+      // The dispatcher is the single entry point: it knows how to unwrap
+      // OpenCode's `{ id, type, properties }` shape, fan out synthesized
+      // events (todo.completed.*, message.reasoning.delta, message.text.delta),
+      // and keep narration context fresh.
       try {
-        if (
-          event.type === "message.part.updated" &&
-          typeof (event as any).text === "string"
-        ) {
-          await dispatcher.onMessagePart((event as any).text)
-        }
-        if (
-          event.type === "tool.execute.before" &&
-          typeof (event as any).tool === "string"
-        ) {
-          await dispatcher.onToolStart((event as any).tool)
-        }
         await dispatcher.onEvent(event)
       } catch (err) {
         await logger.warn(`event handler crashed for ${event.type}`, {

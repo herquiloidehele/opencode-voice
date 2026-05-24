@@ -94,6 +94,7 @@ describe("DEFAULT_CONFIG", () => {
     expect(enabled).toEqual([
       "command.executed",
       "file.edited",
+      "message.reasoning.delta",
       "permission.asked",
       "permission.replied",
       "session.compacted",
@@ -107,9 +108,12 @@ describe("DEFAULT_CONFIG", () => {
     ])
   })
 
-  it("leaves verbatim message streaming opt-in", () => {
+  it("leaves verbatim text streaming opt-in but reasoning narration on", () => {
     expect(DEFAULT_CONFIG.events["message.updated"].enabled).toBe(false)
-    expect(DEFAULT_CONFIG.events["message.part.updated"].enabled).toBe(false)
-    expect(DEFAULT_CONFIG.events["message.part.updated"].mode).toBe("verbatim")
+    expect(DEFAULT_CONFIG.events["message.text.delta"].enabled).toBe(false)
+    expect(DEFAULT_CONFIG.events["message.text.delta"].mode).toBe("verbatim")
+    expect(DEFAULT_CONFIG.events["message.reasoning.delta"].enabled).toBe(true)
+    expect(DEFAULT_CONFIG.events["message.reasoning.delta"].mode).toBe("verbatim")
+    expect(DEFAULT_CONFIG.events["message.reasoning.delta"].priority).toBe("chatty")
   })
 })
