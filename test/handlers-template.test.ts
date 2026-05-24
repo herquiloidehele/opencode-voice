@@ -37,12 +37,12 @@ describe("renderTemplate", () => {
     )
   })
 
-  it("formats session.created with and without title", () => {
+  it("formats session.created", () => {
     expect(renderTemplate({ type: "session.created" })).toBe(
-      "New session started. Ready when you are.",
+      "New session started, working on it.",
     )
     expect(renderTemplate({ type: "session.created", title: "Refactor auth" })).toBe(
-      "New session started: Refactor auth.",
+      "New session started, working on it.",
     )
   })
 

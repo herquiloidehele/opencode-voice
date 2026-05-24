@@ -39,12 +39,7 @@ const templates: Record<string, Renderer> = {
     `Session error: ${truncate(String(e.message ?? "unknown"), 200)}. Check the log for details.`,
   "session.compacted":    ()  =>
     "Session compacted. Older context has been summarized to free up room.",
-  "session.created":      (e) => {
-    const title = e.title ?? e.name
-    return title
-      ? `New session started: ${truncate(stripMarkdown(String(title)), 80)}.`
-      : "New session started. Ready when you are."
-  },
+  "session.created":      () => "New session started, working on it.",
   "permission.asked":     (e) =>
     `Permission requested for ${e.tool ?? "an operation"}. Waiting on your approval.`,
   "permission.replied":   (e) => {
