@@ -1,6 +1,6 @@
 {
   "name": "opencode-voice-tts",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "description": "Voice plugin for opencode — speaks agent events through pluggable TTS backends.",
   "type": "module",
   "main": "./dist/index.js",
@@ -32,6 +32,10 @@
     "demo:greet": "tsx scripts/greet.ts"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^2.0.79",
+    "@ai-sdk/elevenlabs": "^1.0.28",
+    "@ai-sdk/openai": "^2.0.106",
+    "ai": "^5.0.192",
     "zod": "^3.23.0"
   },
   "peerDependencies": {
@@ -44,6 +48,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
+    "msw": "^2.14.6",
     "tsup": "^8.0.0",
     "tsx": "^4.22.3",
     "typescript": "^5.4.0",

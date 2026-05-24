@@ -3,18 +3,18 @@
  *
  * Usage:
  *   npm run demo:say -- "hello world"
- *   npm run demo:say -- "hi from openai" --provider=openai --voice=nova
- *   npm run demo:say -- "elevenlabs test" --provider=elevenlabs --voice=EXAVITQu4vr4xnSDxMaL
+ *   npm run demo:say -- "hi from openai" --model=openai/gpt-4o-mini-tts --voice=nova
+ *   npm run demo:say -- "elevenlabs test" --model=elevenlabs/eleven_turbo_v2_5 --voice=EXAVITQu4vr4xnSDxMaL
  *
  * Env vars:
- *   OPENAI_API_KEY        required for --provider=openai
- *   ELEVENLABS_API_KEY    required for --provider=elevenlabs
+ *   OPENAI_API_KEY        required for openai/* models
+ *   ELEVENLABS_API_KEY    required for elevenlabs/* models
  */
 
 import { createSystemProvider } from "../src/tts/system.js"
-import { createOpenAIProvider } from "../src/tts/openai.js"
-import { createElevenLabsProvider } from "../src/tts/elevenlabs.js"
+import { createAiSdkProvider } from "../src/tts/ai-sdk.js"
 import { createPlayer } from "../src/audio/player.js"
+import { resolveSpeechModel, ConfigError } from "../src/ai-sdk/models.js"
 import type { Runner } from "../src/tts/system.js"
 import { spawn } from "node:child_process"
 import { access, constants } from "node:fs/promises"
@@ -26,7 +26,7 @@ function flag(name: string): string | undefined {
   const m = args.find((a) => a.startsWith(`--${name}=`))
   return m?.slice(name.length + 3)
 }
-const providerName = flag("provider") ?? "system"
+const modelSlug = flag("model") ?? "system/say"
 const voice = flag("voice")
 const rate = flag("rate") ? Number(flag("rate")) : 1.0
 
@@ -54,24 +54,32 @@ const runner: Runner = {
   },
 }
 
+let resolved
+try {
+  resolved = resolveSpeechModel(modelSlug)
+} catch (err) {
+  if (err instanceof ConfigError) console.error(err.message)
+  else console.error(err)
+  process.exit(1)
+}
+
 const provider =
-  providerName === "openai"
-    ? createOpenAIProvider({})
-    : providerName === "elevenlabs"
-      ? createElevenLabsProvider({})
-      : createSystemProvider({ runner })
+  resolved.provider === "system"
+    ? createSystemProvider({ runner })
+    : createAiSdkProvider()
 
-const providerConfig =
-  providerName === "openai"
-    ? { apiKey: process.env.OPENAI_API_KEY }
-    : providerName === "elevenlabs"
-      ? { apiKey: process.env.ELEVENLABS_API_KEY, voiceId: voice ?? "EXAVITQu4vr4xnSDxMaL" }
-      : {}
+if (resolved.provider === "system") {
+  await provider.init({})
+} else {
+  await provider.init({
+    model: resolved.model,
+    provider: resolved.provider,
+    voice,
+  })
+}
 
-console.log(`[say] provider=${providerName} voice=${voice ?? "(default)"} rate=${rate}`)
+console.log(`[say] model=${modelSlug} voice=${voice ?? "(default)"} rate=${rate}`)
 console.log(`[say] text=${JSON.stringify(text)}`)
-
-await provider.init(providerConfig as any)
 
 const ac = new AbortController()
 const result = await provider.synthesize(text, { voice, rate }, ac.signal)

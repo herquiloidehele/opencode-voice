@@ -7,10 +7,43 @@ describe("parseConfig", () => {
     expect(result.ok).toBe(true)
     if (result.ok) {
       expect(result.config.enabled).toBe(true)
-      expect(result.config.tts.provider).toBe("system")
+      expect(result.config.tts.model).toBe("system/say")
+      expect(result.config.narrator.model).toBe("anthropic/claude-haiku-4")
       expect(result.config.events["session.idle"].enabled).toBe(true)
       expect(result.config.events["session.idle"].mode).toBe("narrate")
     }
+  })
+
+  it("accepts new-shape openai TTS slug", () => {
+    const result = parseConfig({
+      tts: { model: "openai/gpt-4o-mini-tts", voice: "alloy" },
+    })
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.config.tts.model).toBe("openai/gpt-4o-mini-tts")
+      expect(result.config.tts.voice).toBe("alloy")
+    }
+  })
+
+  it("accepts new-shape elevenlabs TTS slug", () => {
+    const result = parseConfig({
+      tts: { model: "elevenlabs/eleven_turbo_v2_5", voice: "voice-id-123" },
+    })
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.config.tts.model).toBe("elevenlabs/eleven_turbo_v2_5")
+      expect(result.config.tts.voice).toBe("voice-id-123")
+    }
+  })
+
+  it("rejects malformed tts.model slug", () => {
+    const result = parseConfig({ tts: { model: "notaslug" } })
+    expect(result.ok).toBe(false)
+  })
+
+  it("rejects malformed narrator.model slug", () => {
+    const result = parseConfig({ narrator: { model: "no slash" } })
+    expect(result.ok).toBe(false)
   })
 
   it("merges user-provided event overrides with defaults", () => {
@@ -20,14 +53,8 @@ describe("parseConfig", () => {
     expect(result.ok).toBe(true)
     if (result.ok) {
       expect(result.config.events["tool.execute.before"].enabled).toBe(true)
-      // session.idle still uses default
       expect(result.config.events["session.idle"].enabled).toBe(true)
     }
-  })
-
-  it("rejects invalid provider name", () => {
-    const result = parseConfig({ tts: { provider: 123 } })
-    expect(result.ok).toBe(false)
   })
 
   it("rejects rate out of bounds", () => {
@@ -45,15 +72,6 @@ describe("parseConfig", () => {
     const result = parseConfig({}, { OPENCODE_VOICE_DISABLED: "1" })
     expect(result.ok).toBe(true)
     if (result.ok) expect(result.config.enabled).toBe(false)
-  })
-
-  it("falls back to env var for OpenAI api key when not in config", () => {
-    const result = parseConfig(
-      { tts: { provider: "openai" } },
-      { OPENAI_API_KEY: "sk-env" }
-    )
-    expect(result.ok).toBe(true)
-    if (result.ok) expect(result.config.tts.openai?.apiKey).toBe("sk-env")
   })
 
   it("defaults greeting to 'opencode voice ready'", () => {

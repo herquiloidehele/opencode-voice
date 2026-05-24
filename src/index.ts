@@ -5,11 +5,15 @@ import { SpeechQueue } from "./queue/speech-queue.js"
 import { type SpeechRequest } from "./queue/types.js"
 import { registerProvider, getProvider } from "./tts/provider.js"
 import { createSystemProvider } from "./tts/system.js"
-import { createOpenAIProvider } from "./tts/openai.js"
-import { createElevenLabsProvider } from "./tts/elevenlabs.js"
+import { createAiSdkProvider } from "./tts/ai-sdk.js"
 import { createPlayer, type Player } from "./audio/player.js"
 import { createHandlerRegistry } from "./handlers/index.js"
 import { createNarrator } from "./handlers/narrator.js"
+import {
+  resolveLanguageModel,
+  resolveSpeechModel,
+  ConfigError,
+} from "./ai-sdk/models.js"
 import { createDispatcher } from "./dispatcher.js"
 import { createCommands } from "./commands/index.js"
 
@@ -23,7 +27,6 @@ import { createCommands } from "./commands/index.js"
 type PluginCtx = {
   client: {
     app: { log: (...args: any[]) => Promise<unknown> }
-    chat?: any
   }
   directory: string
   worktree?: string
@@ -69,29 +72,48 @@ async function initPlugin(ctx: PluginCtx, options?: PluginOptions) {
     return {}
   }
 
-  // 1. Register built-in providers.
-  registerProvider(createSystemProvider({}))
-  registerProvider(createOpenAIProvider({}))
-  registerProvider(createElevenLabsProvider({}))
-
-  // 2. Resolve and initialize the selected provider.
-  const provider = getProvider(config.tts.provider)
-  if (!provider) {
-    await logger.error(`Unknown TTS provider: ${config.tts.provider}`)
+  // 1. Resolve narrator + TTS models from config slugs.
+  let languageModel
+  let resolvedSpeech
+  try {
+    languageModel = resolveLanguageModel(config.narrator.model)
+    resolvedSpeech = resolveSpeechModel(config.tts.model)
+  } catch (err) {
+    if (err instanceof ConfigError) {
+      await logger.error(`Invalid model slug; plugin disabled: ${err.message}`)
+    } else {
+      await logger.error("Failed to resolve models; plugin disabled", {
+        error: String(err),
+      })
+    }
     return {}
   }
-  try {
-    const providerConfig =
-      config.tts.provider === "openai"
-        ? config.tts.openai
-        : config.tts.provider === "elevenlabs"
-          ? config.tts.elevenlabs
-          : {}
-    await provider.init(providerConfig)
-  } catch (err) {
-    await logger.error("Failed to initialize TTS provider; plugin self-disabling", {
-      error: String(err),
-    })
+
+  // 2. Register the right TTS provider.
+  if (resolvedSpeech.provider === "system") {
+    registerProvider(createSystemProvider({}))
+  } else {
+    const aiSdkProvider = createAiSdkProvider()
+    try {
+      await aiSdkProvider.init({
+        model: resolvedSpeech.model,
+        provider: resolvedSpeech.provider,
+        voice: config.tts.voice,
+      })
+    } catch (err) {
+      await logger.error("Failed to initialize TTS provider; plugin disabled", {
+        error: String(err),
+      })
+      return {}
+    }
+    registerProvider(aiSdkProvider)
+  }
+
+  const provider = getProvider(resolvedSpeech.provider)
+  if (!provider) {
+    await logger.error(
+      `TTS provider not found after registration: ${resolvedSpeech.provider}`,
+    )
     return {}
   }
 
@@ -174,20 +196,7 @@ async function initPlugin(ctx: PluginCtx, options?: PluginOptions) {
   })
 
   // 6. Narrator + handler registry.
-  // If the SDK exposes a different LLM shape than client.chat.completions.create,
-  // the narrator will fail gracefully and the handler registry will fall back to templates.
-  const narratorClient = (ctx.client as any).chat
-    ? (ctx.client as any)
-    : {
-        chat: {
-          completions: {
-            create: async () => {
-              throw new Error("Narrator client not available in this context")
-            },
-          },
-        },
-      }
-  const narrator = createNarrator(narratorClient, config.narrator)
+  const narrator = createNarrator(languageModel, config.narrator)
 
   const dispatcher = createDispatcher({
     handler: createHandlerRegistry({
@@ -204,12 +213,12 @@ async function initPlugin(ctx: PluginCtx, options?: PluginOptions) {
   // 7. Commands + custom tool.
   const commands = createCommands({
     queue,
-    providerName: config.tts.provider,
+    providerName: resolvedSpeech.provider,
     voiceName: config.tts.voice,
   })
   if (config.startMuted) commands.mute()
 
-  await logger.info(`opencode-voice-tts ready (provider=${config.tts.provider})`)
+  await logger.info(`opencode-voice-tts ready (provider=${resolvedSpeech.provider})`)
 
   if (config.greeting.trim().length > 0 && !config.startMuted) {
     commands.say(config.greeting)

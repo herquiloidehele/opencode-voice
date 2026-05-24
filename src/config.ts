@@ -9,24 +9,19 @@ const EventConfigSchema = z.object({
   priority: PrioritySchema,
 })
 
+const SLUG_RE = /^[a-z][a-z0-9-]*\/[A-Za-z0-9._-]+$/
+const SLUG_MSG = "must be 'provider/model' (e.g. 'openai/gpt-4o-mini-tts')"
+
 const TTSSchema = z.object({
-  provider: z.string().default("system"),
+  model: z.string().regex(SLUG_RE, `tts.model ${SLUG_MSG}`).default("system/say"),
   voice: z.string().optional(),
-  rate: z.number().min(0.5).max(2.0).default(1.0),
+  rate:  z.number().min(0.5).max(2.0).default(1.0),
   pitch: z.number().min(0.5).max(2.0).default(1.0),
-  openai: z.object({
-    apiKey: z.string().optional(),
-    model: z.string().default("gpt-4o-mini-tts"),
-  }).optional(),
-  elevenlabs: z.object({
-    apiKey: z.string().optional(),
-    voiceId: z.string().optional(),
-  }).optional(),
 }).default({})
 
 const NarratorSchema = z.object({
-  model: z.string().default("anthropic/claude-haiku-4"),
-  timeoutMs: z.number().int().positive().default(5000),
+  model: z.string().regex(SLUG_RE, `narrator.model ${SLUG_MSG}`).default("anthropic/claude-haiku-4"),
+  timeoutMs:     z.number().int().positive().default(5000),
   minIntervalMs: z.number().int().min(0).default(3000),
 }).default({})
 
@@ -92,8 +87,9 @@ export function parseConfig(
   raw: unknown,
   env: Record<string, string | undefined> = process.env,
 ): ParseResult {
-  // Merge raw user input over defaults (event-level deep merge).
   const userObj = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {}
+
+  // Merge raw user input over defaults (event-level deep merge).
   const userEvents =
     userObj.events && typeof userObj.events === "object"
       ? (userObj.events as Record<string, unknown>)
@@ -116,19 +112,9 @@ export function parseConfig(
   }
   const cfg = parsed.data
 
-  // Env overrides.
+  // Env overrides (the only ones we still need — API keys are AI SDK's job).
   if (env.OPENCODE_VOICE_DISABLED === "1") cfg.enabled = false
   if (env.OPENCODE_VOICE_MUTE === "1") cfg.startMuted = true
-
-  // API key env fallbacks.
-  if (cfg.tts.provider === "openai") {
-    cfg.tts.openai = cfg.tts.openai ?? { model: "tts-1" }
-    cfg.tts.openai.apiKey = cfg.tts.openai.apiKey ?? env.OPENAI_API_KEY
-  }
-  if (cfg.tts.provider === "elevenlabs") {
-    cfg.tts.elevenlabs = cfg.tts.elevenlabs ?? {}
-    cfg.tts.elevenlabs.apiKey = cfg.tts.elevenlabs.apiKey ?? env.ELEVENLABS_API_KEY
-  }
 
   return { ok: true, config: cfg }
 }

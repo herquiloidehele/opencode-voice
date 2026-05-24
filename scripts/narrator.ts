@@ -1,22 +1,21 @@
 /**
- * Test the LLM narrator handler in isolation. Sends a real request to your
- * configured chat-completions endpoint and prints + speaks the result.
+ * Test the LLM narrator handler in isolation. Sends a real request via the
+ * Vercel AI SDK and prints + speaks the result.
  *
  * Usage:
- *   OPENAI_API_KEY=sk-... npm run demo:narrator -- --assistant-text="I refactored the auth module" --tool=edit --tool=bash
+ *   ANTHROPIC_API_KEY=... npm run demo:narrator -- --assistant-text="I refactored the auth module" --tool=edit --tool=bash
+ *   OPENAI_API_KEY=...    npm run demo:narrator -- --assistant-text="..." --model=openai/gpt-5
  *
  * Flags:
  *   --assistant-text=...   sample recent assistant output (required)
  *   --tool=...             one or more recent tool calls (repeatable)
- *   --model=...            override narrator model (default: gpt-4o-mini)
+ *   --model=provider/id    override narrator model (default: anthropic/claude-haiku-4)
  *   --no-speak             only print, don't speak
- *
- * Defaults to the OpenAI chat-completions endpoint. Swap providers by setting
- *   OPENAI_API_BASE=https://your-endpoint  (must be OpenAI-compatible).
  */
 
 import { createNarrator } from "../src/handlers/narrator.js"
 import { createSystemProvider } from "../src/tts/system.js"
+import { resolveLanguageModel, ConfigError } from "../src/ai-sdk/models.js"
 import { spawn } from "node:child_process"
 import { access, constants } from "node:fs/promises"
 import { delimiter, sep } from "node:path"
@@ -36,42 +35,22 @@ if (!assistantText) {
   process.exit(1)
 }
 const tools = multi("tool")
-const model = flag("model") ?? "gpt-4o-mini"
+const modelSlug = flag("model") ?? "anthropic/claude-haiku-4"
 const noSpeak = args.includes("--no-speak")
 
-const apiKey = process.env.OPENAI_API_KEY
-if (!apiKey) {
-  console.error("OPENAI_API_KEY env var required")
+let model
+try {
+  model = resolveLanguageModel(modelSlug)
+} catch (err) {
+  if (err instanceof ConfigError) {
+    console.error(err.message)
+  } else {
+    console.error(err)
+  }
   process.exit(1)
 }
 
-const apiBase = process.env.OPENAI_API_BASE ?? "https://api.openai.com"
-
-// Build a minimal OpenAI-compatible client that the narrator can call.
-const client = {
-  chat: {
-    completions: {
-      create: async (req: any) => {
-        const res = await fetch(`${apiBase}/v1/chat/completions`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-          body: JSON.stringify(req),
-        })
-        if (!res.ok) {
-          const body = await res.text().catch(() => "")
-          throw new Error(`LLM call failed ${res.status}: ${body.slice(0, 200)}`)
-        }
-        return res.json()
-      },
-    },
-  },
-}
-
-const narrator = createNarrator(client, {
-  model,
-  timeoutMs: 10_000,
-  minIntervalMs: 0,
-})
+const narrator = createNarrator(model, { timeoutMs: 10_000, minIntervalMs: 0 })
 
 const t0 = Date.now()
 const output = await narrator.summarize(
@@ -80,13 +59,10 @@ const output = await narrator.summarize(
 )
 const ms = Date.now() - t0
 
-console.log(`[narrator] model=${model} latency=${ms}ms`)
+console.log(`[narrator] model=${modelSlug} latency=${ms}ms`)
 console.log(`[narrator] output: ${output ?? "(null — fell back)"}`)
 
-if (!output) {
-  process.exit(0)
-}
-
+if (!output) process.exit(0)
 if (noSpeak) process.exit(0)
 
 console.log("[narrator] speaking...")

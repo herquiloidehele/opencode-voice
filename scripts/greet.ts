@@ -9,19 +9,19 @@
  * Usage:
  *   npm run demo:greet
  *   npm run demo:greet -- --greeting="welcome back"
- *   npm run demo:greet -- --greeting=""                  # should stay silent
- *   npm run demo:greet -- --provider=openai --voice=nova # cloud provider
- *   OPENCODE_VOICE_MUTE=1 npm run demo:greet             # should stay silent
+ *   npm run demo:greet -- --greeting=""                                  # should stay silent
+ *   npm run demo:greet -- --model=openai/gpt-4o-mini-tts --voice=nova    # cloud provider
+ *   OPENCODE_VOICE_MUTE=1 npm run demo:greet                             # should stay silent
  *
  * Flags:
- *   --greeting=<text>   Override greeting text. Empty string disables it.
- *   --provider=<name>   system | openai | elevenlabs (default: system).
- *   --voice=<name>      Voice/voice-id for the provider.
- *   --wait=<ms>         How long to wait for the queue to drain (default 6000).
+ *   --greeting=<text>          Override greeting text. Empty string disables it.
+ *   --model=<provider/model>   TTS model slug (default: system/say).
+ *   --voice=<name>             Voice/voice-id for the provider.
+ *   --wait=<ms>                How long to wait for the queue to drain (default 6000).
  *
  * Env vars:
- *   OPENAI_API_KEY          required for --provider=openai
- *   ELEVENLABS_API_KEY      required for --provider=elevenlabs
+ *   OPENAI_API_KEY          required for openai/* models
+ *   ELEVENLABS_API_KEY      required for elevenlabs/* models
  *   OPENCODE_VOICE_MUTE=1   start muted (greeting should be skipped)
  *   OPENCODE_VOICE_DISABLED=1   skip plugin entirely
  */
@@ -38,13 +38,13 @@ function has(name: string): boolean {
 }
 
 const greeting = flag("greeting")
-const provider = flag("provider") ?? "system"
+const model = flag("model") ?? "system/say"
 const voice = flag("voice")
 const waitMs = flag("wait") ? Number(flag("wait")) : 6000
 
 // Minimal mock of the opencode plugin context. Only `client.app.log` is
-// strictly required by the plugin; `chat` is optional (the narrator falls
-// back gracefully when absent).
+// strictly required by the plugin; the narrator uses its own AI SDK model
+// (configured via narrator.model + env vars), not ctx.client.
 const ctx = {
   client: {
     app: {
@@ -66,23 +66,14 @@ const ctx = {
 // otherwise.
 const options: Record<string, unknown> = {
   tts: {
-    provider,
+    model,
     ...(voice ? { voice } : {}),
-    ...(provider === "openai" ? { openai: { apiKey: process.env.OPENAI_API_KEY } } : {}),
-    ...(provider === "elevenlabs"
-      ? {
-          elevenlabs: {
-            apiKey: process.env.ELEVENLABS_API_KEY,
-            ...(voice ? { voiceId: voice } : {}),
-          },
-        }
-      : {}),
   },
 }
 if (greeting !== undefined) options.greeting = greeting
 
 console.error(
-  `[greet] booting plugin: provider=${provider}` +
+  `[greet] booting plugin: model=${model}` +
     (voice ? ` voice=${voice}` : "") +
     (greeting !== undefined ? ` greeting=${JSON.stringify(greeting)}` : " greeting=(default)"),
 )

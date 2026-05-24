@@ -27,7 +27,7 @@ array — *not* as a top-level key. Don't put `"voice": { … }` at the top of
 ```json
 {
   "plugin": [
-    ["opencode-voice-tts", { "tts": { "provider": "system", "voice": "Samantha" } }]
+    ["opencode-voice-tts", { "tts": { "model": "system/say", "voice": "Samantha" } }]
   ]
 }
 ```
@@ -44,8 +44,8 @@ Full example:
     [
       "opencode-voice-tts",
       {
-        "tts": { "provider": "system", "voice": "Samantha", "rate": 1.0 },
-        "narrator": { "model": "openai/gpt-4o-mini" },
+        "tts": { "model": "system/say", "voice": "Samantha", "rate": 1.0 },
+        "narrator": { "model": "anthropic/claude-haiku-4" },
         "events": {
           "tool.execute.before": { "enabled": true }
         }
@@ -55,12 +55,16 @@ Full example:
 }
 ```
 
+Both `tts.model` and `narrator.model` are `provider/model` slugs. The plugin
+looks up the right Vercel AI SDK package internally; you don't need to
+import anything.
+
 ## Providers
 
 ### System (default, zero-config)
 
 ```json
-{ "tts": { "provider": "system", "voice": "Samantha" } }
+{ "tts": { "model": "system/say", "voice": "Samantha" } }
 ```
 
 - macOS: any installed voice. Try `say -v ?` for the list.
@@ -70,37 +74,28 @@ Full example:
 ### OpenAI
 
 ```json
-{
-  "tts": {
-    "provider": "openai",
-    "voice": "nova"
-  }
-}
+{ "tts": { "model": "openai/gpt-4o-mini-tts", "voice": "nova" } }
 ```
 
-Set `OPENAI_API_KEY` in your environment, or `tts.openai.apiKey` in config.
+Set `OPENAI_API_KEY` in your environment. Available model IDs include
+`tts-1`, `tts-1-hd`, `gpt-4o-mini-tts`. Voices: `alloy`, `ash`, `coral`,
+`echo`, `fable`, `onyx`, `nova`, `sage`, `shimmer`.
 
 ### ElevenLabs
 
 ```json
-{
-  "tts": {
-    "provider": "elevenlabs",
-    "elevenlabs": { "voiceId": "EXAVITQu4vr4xnSDxMaL" }
-  }
-}
+{ "tts": { "model": "elevenlabs/eleven_turbo_v2_5", "voice": "EXAVITQu4vr4xnSDxMaL" } }
 ```
 
-Set `ELEVENLABS_API_KEY` in env or config.
+Set `ELEVENLABS_API_KEY` in your environment. The `voice` field takes an
+ElevenLabs voice ID.
 
 ## Startup Greeting
 
 The plugin speaks a short greeting once after it finishes initializing. Defaults to `"opencode voice ready"`.
 
 ```json
-{
-  "greeting": "welcome back"
-}
+{ "greeting": "welcome back" }
 ```
 
 Set to an empty string to disable:
@@ -139,17 +134,25 @@ Example — enable per-tool narration:
 
 ## Narrator Model
 
-When `mode: "narrate"` is used, opencode-voice-tts asks a small LLM to produce a concise spoken explanation of what just happened. Configure it:
+When `mode: "narrate"` is used, opencode-voice-tts asks a small LLM (via the
+Vercel AI SDK) to produce a concise spoken explanation of what just
+happened. Configure it:
 
 ```json
 {
   "narrator": {
-    "model": "openai/gpt-4o-mini",
+    "model": "anthropic/claude-haiku-4",
     "timeoutMs": 5000,
     "minIntervalMs": 3000
   }
 }
 ```
+
+Supported narrator providers: `openai/*`, `anthropic/*`. API keys come from
+the environment:
+
+- `OPENAI_API_KEY` for `openai/*` models
+- `ANTHROPIC_API_KEY` for `anthropic/*` models
 
 The narrator is prompted to be concise but cover everything important — attempted actions, tools used, outcomes, blockers, and obvious next steps. No token cap is sent to the model; rate-limiting is controlled by `minIntervalMs`, and the handler falls back to a template if the call fails or is throttled.
 
@@ -186,28 +189,28 @@ registerProvider({
 })
 ```
 
-Then in config:
-
-```json
-{ "voice": { "tts": { "provider": "my-tts" } } }
-```
+Custom providers are selected with a `custom/<name>`-style slug — but note
+that the built-in slug parser only knows about `openai/*`, `elevenlabs/*`,
+`anthropic/*`, and `system/say`. To route to a custom provider today,
+either fork the slug resolver in `src/ai-sdk/models.ts` or open an issue.
 
 ## Local Development & Validation
 
-Five runnable demo scripts let you exercise each feature without booting opencode. All use `tsx` (no separate build step needed) and call into the source directly.
+Six runnable demo scripts let you exercise each feature without booting opencode. All use `tsx` (no separate build step needed) and call into the source directly.
 
 | Script | What it validates |
 |---|---|
-| `npm run demo:say -- "text"` | Synthesis + playback for any provider. Add `--provider=openai --voice=nova` (needs `OPENAI_API_KEY`). |
+| `npm run demo:say -- "text"` | Synthesis + playback for any provider. Add `--model=openai/gpt-4o-mini-tts --voice=nova` (needs `OPENAI_API_KEY`). |
 | `npm run demo:queue` | The speech queue's priority interrupt + dedup behavior. You should hear interruption mid-sentence and three deduped requests collapse to one. |
 | `npm run demo:event -- <event.type>` | The full event-to-audio pipeline. Examples: `session.idle`, `session.error --message="boom"`, `permission.asked --tool=write`, `todo.completed.all`. Enable normally-off events with `--enable=tool.execute.before`. |
-| `npm run demo:narrator -- --assistant-text="..." --tool=bash` | The LLM narrator handler. Needs `OPENAI_API_KEY`. Prints + speaks the generated summary. Use `--no-speak` to print only. |
+| `npm run demo:narrator -- --assistant-text="..." --tool=bash` | The LLM narrator handler. Needs `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` depending on `--model=...`. Prints + speaks the generated summary. Use `--no-speak` to print only. |
 | `npm run demo:config -- '{...json...}'` or `--file=path.json` or `--defaults` | Validates a config block against the Zod schema and prints the resolved (defaults-applied) result. |
+| `npm run demo:greet -- --model=openai/gpt-4o-mini-tts` | Boots the full plugin and exercises the startup greeting. |
 
 Plus the standard verification commands:
 
 ```bash
-npm test               # full unit + integration suite (93 tests)
+npm test               # full unit + integration suite
 npm test -- speech-queue.test.ts   # one specific suite
 npm run typecheck      # TypeScript validation
 npm run build          # produce dist/

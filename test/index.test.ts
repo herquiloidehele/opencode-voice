@@ -57,7 +57,7 @@ describe("OpencodeVoice plugin", () => {
 
   it("accepts options as the second argument (opencode's plugin contract)", async () => {
     const hooks = (await OpencodeVoice(baseCtx(), {
-      tts: { provider: "openai", openai: { apiKey: "sk-test" } },
+      tts: { model: "system/say" },
     })) as any
     // Initialization should succeed (returns hooks object, not {}).
     expect(typeof hooks.event).toBe("function")
