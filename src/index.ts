@@ -224,12 +224,82 @@ async function initPlugin(ctx: PluginCtx, options?: PluginOptions) {
     commands.say(config.greeting)
   }
 
+  // Slash-command shortcuts intercepted from the TUI. These bypass the LLM
+  // for instant response (interrupt/mute take effect immediately, not after
+  // the model decides to call a tool).
+  //
+  // The exact wire shape of `tui.command.execute` differs across opencode
+  // versions, so we read defensively from common locations.
+  const SHORTCUT_HANDLERS: Record<string, () => string> = {
+    "voice-stop": () => {
+      commands.stop()
+      return "stopped"
+    },
+    "voice-off": () => {
+      commands.mute()
+      return "muted"
+    },
+    "voice-on": () => {
+      commands.unmute()
+      return "unmuted"
+    },
+    "voice-toggle": () => {
+      const nowMuted = commands.toggle()
+      return nowMuted ? "muted" : "unmuted"
+    },
+  }
+
+  function extractCommandName(event: { [k: string]: unknown }): string | null {
+    const props = (event as any).properties && typeof (event as any).properties === "object"
+      ? (event as any).properties
+      : event
+    const candidates = [
+      (props as any).command,
+      (props as any).name,
+      (props as any).id,
+      (event as any).command,
+      (event as any).name,
+    ]
+    for (const c of candidates) {
+      if (typeof c === "string" && c.length > 0) {
+        return c.replace(/^\/+/, "").toLowerCase()
+      }
+    }
+    return null
+  }
+
   return {
     event: async ({
       event,
     }: {
       event: { type: string; [k: string]: unknown }
     }) => {
+      // Intercept TUI command shortcuts BEFORE the dispatcher so they take
+      // effect synchronously, without going through the narrator/queue path.
+      if (event.type === "tui.command.execute" || event.type === "command.executed") {
+        // Log the raw shape once so we can see what opencode actually sends
+        // (the wire format isn't strongly documented and varies by version).
+        await logger.info(`voice: command event received`, {
+          type: event.type,
+          event,
+        })
+        const name = extractCommandName(event)
+        if (name && SHORTCUT_HANDLERS[name]) {
+          try {
+            const result = SHORTCUT_HANDLERS[name]()
+            await logger.info(`voice shortcut /${name} -> ${result}`)
+          } catch (err) {
+            await logger.warn(`voice shortcut /${name} failed`, {
+              error: String(err),
+            })
+          }
+          return
+        }
+        if (name) {
+          await logger.info(`voice: command /${name} did not match any shortcut`)
+        }
+      }
+
       // The dispatcher is the single entry point: it knows how to unwrap
       // OpenCode's `{ id, type, properties }` shape, fan out synthesized
       // events (todo.completed.*, message.reasoning.delta, message.text.delta),
@@ -245,22 +315,49 @@ async function initPlugin(ctx: PluginCtx, options?: PluginOptions) {
     tool: {
       voice: {
         description:
-          "Control the opencode-speaker plugin. Actions: mute (silence + drop queue), unmute, say (speak arbitrary text), test (canned line for verifying audio), status (report provider, voice, mute state, queue size).",
+          "Control the opencode-speaker plugin. Actions: stop (interrupt current speech + drop queue, keep enabled), mute/off (silence + drop queue + disable), unmute/on (re-enable), toggle (flip mute), say (speak arbitrary text), test (canned line for verifying audio), status (report provider, voice, mute state, queue size).",
         args: {
-          action: z.enum(["mute", "unmute", "say", "test", "status"]),
+          action: z.enum([
+            "stop",
+            "mute",
+            "off",
+            "unmute",
+            "on",
+            "toggle",
+            "say",
+            "test",
+            "status",
+          ]),
           text: z.string().optional(),
         },
         async execute(args: {
-          action: "mute" | "unmute" | "say" | "test" | "status"
+          action:
+            | "stop"
+            | "mute"
+            | "off"
+            | "unmute"
+            | "on"
+            | "toggle"
+            | "say"
+            | "test"
+            | "status"
           text?: string
         }) {
-          if (args.action === "mute") {
+          if (args.action === "stop") {
+            commands.stop()
+            return "stopped"
+          }
+          if (args.action === "mute" || args.action === "off") {
             commands.mute()
             return "muted"
           }
-          if (args.action === "unmute") {
+          if (args.action === "unmute" || args.action === "on") {
             commands.unmute()
             return "unmuted"
+          }
+          if (args.action === "toggle") {
+            const nowMuted = commands.toggle()
+            return nowMuted ? "muted" : "unmuted"
           }
           if (args.action === "say") {
             commands.say(args.text ?? "")

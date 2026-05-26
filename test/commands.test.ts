@@ -9,6 +9,7 @@ function fakeQueue() {
     push: vi.fn((r: any) => log.push(`push:${r.text}`)),
     mute: vi.fn(() => log.push("mute")),
     unmute: vi.fn(() => log.push("unmute")),
+    stop: vi.fn(() => log.push("stop")),
     size: vi.fn(() => 3),
   } as any
 }
@@ -45,6 +46,26 @@ describe("commands", () => {
     const c = createCommands({ queue: q, providerName: "system", voiceName: "X" })
     c.test()
     expect(q.push).toHaveBeenCalled()
+  })
+
+  it("stop calls queue.stop but leaves mute state alone", () => {
+    const q = fakeQueue()
+    const c = createCommands({ queue: q, providerName: "system", voiceName: "X" })
+    c.stop()
+    expect(q.stop).toHaveBeenCalled()
+    expect(q.mute).not.toHaveBeenCalled()
+    expect(c.status().muted).toBe(false)
+  })
+
+  it("toggle flips mute state and returns the new value", () => {
+    const q = fakeQueue()
+    const c = createCommands({ queue: q, providerName: "system", voiceName: "X" })
+    expect(c.toggle()).toBe(true)
+    expect(q.mute).toHaveBeenCalledTimes(1)
+    expect(c.status().muted).toBe(true)
+    expect(c.toggle()).toBe(false)
+    expect(q.unmute).toHaveBeenCalledTimes(1)
+    expect(c.status().muted).toBe(false)
   })
 
   it("status returns provider/voice/muted/queue size", () => {

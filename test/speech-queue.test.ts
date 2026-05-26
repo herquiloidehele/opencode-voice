@@ -127,6 +127,24 @@ describe("SpeechQueue", () => {
     expect(log).toEqual([])
   })
 
+  it("stop interrupts current + clears queue without muting", async () => {
+    const log: CallLog = []
+    const q = new SpeechQueue({ speak: makeSpeaker(log, 50), staleMs: 8000, now: () => Date.now() })
+    q.push(req({ id: "a" }))
+    q.push(req({ id: "b" }))
+    await new Promise((r) => setTimeout(r, 5))
+    q.stop()
+    await q.idle()
+    expect(log).toContain("abort:a")
+    expect(log).not.toContain("start:b")
+    expect(q.isMuted()).toBe(false)
+    // After stop, new requests still speak (proves we didn't mute).
+    q.push(req({ id: "c" }))
+    await q.idle()
+    expect(log).toContain("start:c")
+    expect(log).toContain("done:c")
+  })
+
   it("never throws when speak rejects", async () => {
     const speak = async () => {
       throw new Error("synth failed")

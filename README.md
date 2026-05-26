@@ -158,10 +158,43 @@ The narrator is prompted to be concise but cover everything important — attemp
 
 ## Controls
 
+### Slash-command shortcuts
+
+The plugin intercepts these TUI commands directly (no LLM round-trip — they
+take effect immediately, even mid-sentence):
+
+| Command | Effect |
+|---|---|
+| `/voice-stop` | Interrupt the current utterance and drop the queue. Plugin stays enabled. |
+| `/voice-off` | Same as mute: interrupt + drop queue + disable future speech. |
+| `/voice-on` | Re-enable speech. |
+| `/voice-toggle` | Flip between on and off. |
+
+Wire them up as opencode custom commands in `opencode.json` (the templates
+just call the `voice` tool, but the plugin short-circuits the slash command
+before that happens so behavior is instant):
+
+```jsonc
+{
+  "command": {
+    "voice-stop":   { "description": "Stop speaking now",    "template": "Call the voice tool with action stop." },
+    "voice-off":    { "description": "Mute the voice",       "template": "Call the voice tool with action mute." },
+    "voice-on":     { "description": "Unmute the voice",     "template": "Call the voice tool with action unmute." },
+    "voice-toggle": { "description": "Toggle voice on/off",  "template": "Call the voice tool with action toggle." }
+  }
+}
+```
+
+You can also bind these to keys via [keybinds](https://opencode.ai/docs/keybinds/) — e.g. `Esc` → `/voice-stop` for a panic button.
+
+### `voice` custom tool
+
 Via the `voice` custom tool (the agent can invoke this; you can also call it):
 
-- `{ "action": "mute" }` — drop the queue, stop the current utterance.
-- `{ "action": "unmute" }` — re-enable.
+- `{ "action": "stop" }` — interrupt the current utterance and drop the queue, but keep the plugin enabled for future events.
+- `{ "action": "mute" }` (alias `off`) — drop the queue, stop the current utterance, and silence future events.
+- `{ "action": "unmute" }` (alias `on`) — re-enable.
+- `{ "action": "toggle" }` — flip mute state; returns `muted` or `unmuted`.
 - `{ "action": "say", "text": "hello" }` — speak arbitrary text.
 - `{ "action": "test" }` — speak a canned line. Useful for verifying setup.
 - `{ "action": "status" }` — JSON status (provider, voice, mute, queue size).

@@ -55,6 +55,20 @@ export class SpeechQueue {
     this.muted = false
   }
 
+  /**
+   * Interrupt the current utterance and drop the pending queue WITHOUT
+   * changing the muted state. Use this for "stop speaking right now" while
+   * leaving future events free to speak.
+   */
+  stop(): void {
+    this.queue = []
+    if (this.current) this.current.abort.abort()
+  }
+
+  isMuted(): boolean {
+    return this.muted
+  }
+
   size(): number {
     return this.queue.length + (this.current ? 1 : 0)
   }
