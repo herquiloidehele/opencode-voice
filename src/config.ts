@@ -9,11 +9,14 @@ const EventConfigSchema = z.object({
   priority: PrioritySchema,
 })
 
+
+export const DEFAULT_TTS_MODEL = "openai/gpt-4o-mini-tts"
+
 const SLUG_RE = /^[a-z][a-z0-9-]*\/[A-Za-z0-9._-]+$/
-const SLUG_MSG = "must be 'provider/model' (e.g. 'openai/gpt-4o-mini-tts')"
+const SLUG_MSG = `must be 'provider/model' (e.g. '${DEFAULT_TTS_MODEL}')`
 
 const TTSSchema = z.object({
-  model: z.string().regex(SLUG_RE, `tts.model ${SLUG_MSG}`).default("openai/gpt-4o-mini-tts"),
+  model: z.string().regex(SLUG_RE, `tts.model ${SLUG_MSG}`).default(DEFAULT_TTS_MODEL),
   voice: z.string().optional(),
   rate:  z.number().min(0.5).max(2.0).default(1.0),
   pitch: z.number().min(0.5).max(2.0).default(1.0),

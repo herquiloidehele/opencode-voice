@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { parseConfig, DEFAULT_CONFIG } from "../src/config.js"
+import { parseConfig, DEFAULT_CONFIG, DEFAULT_TTS_MODEL } from "../src/config.js"
 
 describe("parseConfig", () => {
   it("returns defaults when given empty object", () => {
@@ -7,7 +7,7 @@ describe("parseConfig", () => {
     expect(result.ok).toBe(true)
     if (result.ok) {
       expect(result.config.enabled).toBe(true)
-      expect(result.config.tts.model).toBe("openai/gpt-4o-mini-tts")
+      expect(result.config.tts.model).toBe(DEFAULT_TTS_MODEL)
       expect(result.config.narrator.model).toBe("anthropic/claude-haiku-4")
       expect(result.config.events["session.idle"].enabled).toBe(true)
       expect(result.config.events["session.idle"].mode).toBe("narrate")
@@ -16,11 +16,11 @@ describe("parseConfig", () => {
 
   it("accepts new-shape openai TTS slug", () => {
     const result = parseConfig({
-      tts: { model: "openai/gpt-4o-mini-tts", voice: "alloy" },
+      tts: { model: DEFAULT_TTS_MODEL, voice: "alloy" },
     })
     expect(result.ok).toBe(true)
     if (result.ok) {
-      expect(result.config.tts.model).toBe("openai/gpt-4o-mini-tts")
+      expect(result.config.tts.model).toBe(DEFAULT_TTS_MODEL)
       expect(result.config.tts.voice).toBe("alloy")
     }
   })

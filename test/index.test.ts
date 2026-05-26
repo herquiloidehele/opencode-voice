@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest"
 import OpencodeSpeakerDefault, { OpencodeSpeaker } from "../src/index.js"
+import { DEFAULT_TTS_MODEL } from "../src/config.js"
 
 describe("opencode-speaker plugin module shape", () => {
   it("default-exports the plugin function itself (current opencode contract)", () => {
@@ -57,7 +58,7 @@ describe("OpencodeSpeaker plugin", () => {
 
   it("accepts options as the second argument (opencode's plugin contract)", async () => {
     const hooks = (await OpencodeSpeaker(baseCtx(), {
-      tts: { model: "openai/gpt-4o-mini-tts" },
+      tts: { model: DEFAULT_TTS_MODEL },
       // Keep the greeting from pushing onto the queue and triggering a
       // background synthesize() call (which would fail without OPENAI_API_KEY).
       startMuted: true,

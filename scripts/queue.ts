@@ -21,8 +21,9 @@ import { createAiSdkProvider } from "../src/tts/ai-sdk.js"
 import { createPlayer } from "../src/audio/player.js"
 import { defaultRunner } from "../src/audio/runner.js"
 import { resolveSpeechModel } from "../src/ai-sdk/models.js"
+import { DEFAULT_TTS_MODEL } from "../src/config.js"
 
-const resolved = resolveSpeechModel("openai/gpt-4o-mini-tts")
+const resolved = resolveSpeechModel(DEFAULT_TTS_MODEL)
 const provider = createAiSdkProvider()
 await provider.init({ model: resolved.model, provider: resolved.provider })
 

@@ -28,6 +28,7 @@ import {
   resolveSpeechModel,
   ConfigError,
 } from "../src/ai-sdk/models.js"
+import { DEFAULT_TTS_MODEL } from "../src/config.js"
 
 const args = process.argv.slice(2)
 function flag(name: string): string | undefined {
@@ -45,7 +46,7 @@ if (!assistantText) {
 }
 const tools = multi("tool")
 const modelSlug = flag("model") ?? "anthropic/claude-haiku-4"
-const ttsModelSlug = flag("tts-model") ?? "openai/gpt-4o-mini-tts"
+const ttsModelSlug = flag("tts-model") ?? DEFAULT_TTS_MODEL
 const ttsVoice = flag("tts-voice")
 const noSpeak = args.includes("--no-speak")
 

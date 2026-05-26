@@ -4,6 +4,7 @@ import {
   resolveSpeechModel,
   ConfigError,
 } from "../src/ai-sdk/models.js"
+import { DEFAULT_TTS_MODEL } from "../src/config.js"
 
 describe("resolveLanguageModel", () => {
   it("returns a model for openai/<model>", () => {
@@ -35,7 +36,7 @@ describe("resolveLanguageModel", () => {
 
 describe("resolveSpeechModel", () => {
   it("returns openai speech model with provider tag", () => {
-    const r = resolveSpeechModel("openai/gpt-4o-mini-tts")
+    const r = resolveSpeechModel(DEFAULT_TTS_MODEL)
     expect(r.provider).toBe("openai")
     expect(r.model).toBeDefined()
     expect(r.model).not.toBeNull()

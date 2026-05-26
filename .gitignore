@@ -3,3 +3,4 @@ dist/
 .opencode/
 .idea/
 *.log
+docs/

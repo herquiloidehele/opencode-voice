@@ -27,6 +27,7 @@
  */
 
 import { OpencodeSpeaker } from "../src/index.js"
+import { DEFAULT_TTS_MODEL } from "../src/config.js"
 
 const args = process.argv.slice(2)
 function flag(name: string): string | undefined {
@@ -38,7 +39,7 @@ function has(name: string): boolean {
 }
 
 const greeting = flag("greeting")
-const model = flag("model") ?? "openai/gpt-4o-mini-tts"
+const model = flag("model") ?? DEFAULT_TTS_MODEL
 const voice = flag("voice")
 const waitMs = flag("wait") ? Number(flag("wait")) : 6000
 

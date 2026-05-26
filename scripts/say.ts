@@ -15,6 +15,7 @@ import { createAiSdkProvider } from "../src/tts/ai-sdk.js"
 import { createPlayer } from "../src/audio/player.js"
 import { defaultRunner } from "../src/audio/runner.js"
 import { resolveSpeechModel, ConfigError } from "../src/ai-sdk/models.js"
+import { DEFAULT_TTS_MODEL } from "../src/config.js"
 
 const args = process.argv.slice(2)
 const text = args.find((a) => !a.startsWith("--")) ?? "opencode speaker say-demo, working as expected"
@@ -22,7 +23,7 @@ function flag(name: string): string | undefined {
   const m = args.find((a) => a.startsWith(`--${name}=`))
   return m?.slice(name.length + 3)
 }
-const modelSlug = flag("model") ?? "openai/gpt-4o-mini-tts"
+const modelSlug = flag("model") ?? DEFAULT_TTS_MODEL
 const voice = flag("voice")
 const rate = flag("rate") ? Number(flag("rate")) : 1.0
 
