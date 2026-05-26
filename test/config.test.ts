@@ -74,10 +74,10 @@ describe("parseConfig", () => {
     if (result.ok) expect(result.config.enabled).toBe(false)
   })
 
-  it("defaults greeting to 'opencode voice ready'", () => {
+  it("defaults greeting to 'opencode speaker ready'", () => {
     const result = parseConfig({})
     expect(result.ok).toBe(true)
-    if (result.ok) expect(result.config.greeting).toBe("opencode voice ready")
+    if (result.ok) expect(result.config.greeting).toBe("opencode speaker ready")
   })
 
   it("allows overriding the greeting string", () => {

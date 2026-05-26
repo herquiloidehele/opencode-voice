@@ -62,7 +62,7 @@ const ctx = {
 } as const
 
 // Build options object. `greeting` is only set if the user explicitly passed
-// --greeting=... so the default ("opencode voice ready") still applies
+// --greeting=... so the default ("opencode speaker ready") still applies
 // otherwise.
 const options: Record<string, unknown> = {
   tts: {

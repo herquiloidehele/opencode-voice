@@ -9,7 +9,8 @@
 What was actually applied:
 
 - **Renamed:** package name (`opencode-voice-tts` → `opencode-speaker`), exported function (`OpencodeVoice` → `OpencodeSpeaker`), all log scopes, tmpdir prefix, `src/api.ts` doc comments, READme title and references to the package, IDE module file (`.idea/opencode-voice-plugin.iml` → `.idea/opencode-speaker.iml`).
-- **Kept (per user direction mid-execution):** the `tts.voice` config field, `OPENCODE_VOICE_*` env vars, the `voice` custom tool name, `VoiceConfig`/`VoiceStatus` internal types, the `voiceName` createCommands option, the default greeting string `"opencode voice ready"`, the canned test line `"opencode voice test…"`, and the `--voice=` demo-script flags. The `voice` term remains the domain language for TTS voice selection.
+- **Kept (per user direction mid-execution):** the `tts.voice` config field, `OPENCODE_VOICE_*` env vars, the `voice` custom tool name, `VoiceConfig`/`VoiceStatus` internal types, the `voiceName` createCommands option, the canned test line `"opencode voice test…"`, and the `--voice=` demo-script flags. The `voice` term remains the domain language for TTS voice selection.
+- **Also renamed (follow-up):** the default greeting string `"opencode voice ready"` → `"opencode speaker ready"` (updated in `src/config.ts`, `test/config.test.ts`, `scripts/greet.ts` comment, and README).
 
 Tasks 1, 2, and 4 in this plan are therefore marked CANCELLED in the corresponding todo log. Tasks 3, 5–11 were executed.
 

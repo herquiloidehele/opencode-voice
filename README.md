@@ -92,7 +92,7 @@ ElevenLabs voice ID.
 
 ## Startup Greeting
 
-The plugin speaks a short greeting once after it finishes initializing. Defaults to `"opencode voice ready"`.
+The plugin speaks a short greeting once after it finishes initializing. Defaults to `"opencode speaker ready"`.
 
 ```json
 { "greeting": "welcome back" }
