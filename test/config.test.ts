@@ -1,5 +1,13 @@
 import { describe, it, expect } from "vitest"
-import { parseConfig, DEFAULT_CONFIG, DEFAULT_TTS_MODEL } from "../src/config.js"
+import {
+  parseConfig,
+  DEFAULT_CONFIG,
+  DEFAULT_TTS_MODEL,
+  DEFAULT_NARRATOR_MODEL,
+  DEFAULT_GREETING,
+  ENV_DISABLED,
+  ENV_MUTE,
+} from "../src/config.js"
 
 describe("parseConfig", () => {
   it("returns defaults when given empty object", () => {
@@ -8,7 +16,7 @@ describe("parseConfig", () => {
     if (result.ok) {
       expect(result.config.enabled).toBe(true)
       expect(result.config.tts.model).toBe(DEFAULT_TTS_MODEL)
-      expect(result.config.narrator.model).toBe("anthropic/claude-haiku-4")
+      expect(result.config.narrator.model).toBe(DEFAULT_NARRATOR_MODEL)
       expect(result.config.events["session.idle"].enabled).toBe(true)
       expect(result.config.events["session.idle"].mode).toBe("narrate")
     }
@@ -62,22 +70,22 @@ describe("parseConfig", () => {
     expect(result.ok).toBe(false)
   })
 
-  it("respects OPENCODE_VOICE_MUTE env override", () => {
-    const result = parseConfig({}, { OPENCODE_VOICE_MUTE: "1" })
+  it(`respects ${ENV_MUTE} env override`, () => {
+    const result = parseConfig({}, { [ENV_MUTE]: "1" })
     expect(result.ok).toBe(true)
     if (result.ok) expect(result.config.startMuted).toBe(true)
   })
 
-  it("disables plugin when OPENCODE_VOICE_DISABLED is set", () => {
-    const result = parseConfig({}, { OPENCODE_VOICE_DISABLED: "1" })
+  it(`disables plugin when ${ENV_DISABLED} is set`, () => {
+    const result = parseConfig({}, { [ENV_DISABLED]: "1" })
     expect(result.ok).toBe(true)
     if (result.ok) expect(result.config.enabled).toBe(false)
   })
 
-  it("defaults greeting to 'opencode speaker ready'", () => {
+  it("defaults greeting to the canonical greeting", () => {
     const result = parseConfig({})
     expect(result.ok).toBe(true)
-    if (result.ok) expect(result.config.greeting).toBe("opencode speaker ready")
+    if (result.ok) expect(result.config.greeting).toBe(DEFAULT_GREETING)
   })
 
   it("allows overriding the greeting string", () => {

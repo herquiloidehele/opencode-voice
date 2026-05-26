@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { parseConfig } from "./config.js"
+import { parseConfig, PLUGIN_NAME } from "./config.js"
 import { createLogger } from "./log.js"
 import { SpeechQueue } from "./queue/speech-queue.js"
 import { type SpeechRequest } from "./queue/types.js"
@@ -42,8 +42,8 @@ export const OpencodeSpeaker = async (ctx: PluginCtx, options?: PluginOptions) =
   } catch (err) {
     // Last-line-of-defense: never let plugin failure crash opencode startup.
     try {
-      const logger = createLogger(ctx.client as any, "opencode-speaker")
-      await logger.error("opencode-speaker failed to initialize; plugin disabled", {
+      const logger = createLogger(ctx.client as any, PLUGIN_NAME)
+      await logger.error(`${PLUGIN_NAME} failed to initialize; plugin disabled`, {
         error: String(err),
       })
     } catch {
@@ -54,7 +54,7 @@ export const OpencodeSpeaker = async (ctx: PluginCtx, options?: PluginOptions) =
 }
 
 async function initPlugin(ctx: PluginCtx, options?: PluginOptions) {
-  const logger = createLogger(ctx.client as any, "opencode-speaker")
+  const logger = createLogger(ctx.client as any, PLUGIN_NAME)
   // opencode passes per-plugin config as the second argument when the user
   // declares the plugin in tuple form: ["opencode-speaker", { ...options }].
   // We accept any user object and let parseConfig validate + apply defaults.
@@ -68,7 +68,7 @@ async function initPlugin(ctx: PluginCtx, options?: PluginOptions) {
   const config = parsed.config
 
   if (!config.enabled) {
-    await logger.info("opencode-speaker disabled by config or env")
+    await logger.info(`${PLUGIN_NAME} disabled by config or env`)
     return {}
   }
 
@@ -179,7 +179,7 @@ async function initPlugin(ctx: PluginCtx, options?: PluginOptions) {
   })
   if (config.startMuted) commands.mute()
 
-  await logger.info(`opencode-speaker ready (provider=${resolvedSpeech.provider})`)
+  await logger.info(`${PLUGIN_NAME} ready (provider=${resolvedSpeech.provider})`)
 
   if (config.greeting.trim().length > 0 && !config.startMuted) {
     commands.say(config.greeting)
@@ -276,7 +276,7 @@ async function initPlugin(ctx: PluginCtx, options?: PluginOptions) {
     tool: {
       voice: {
         description:
-          "Control the opencode-speaker plugin. Actions: stop (interrupt current speech + drop queue, keep enabled), mute/off (silence + drop queue + disable), unmute/on (re-enable), toggle (flip mute), say (speak arbitrary text), test (canned line for verifying audio), status (report provider, voice, mute state, queue size).",
+          `Control the ${PLUGIN_NAME} plugin. Actions: stop (interrupt current speech + drop queue, keep enabled), mute/off (silence + drop queue + disable), unmute/on (re-enable), toggle (flip mute), say (speak arbitrary text), test (canned line for verifying audio), status (report provider, voice, mute state, queue size).`,
         args: {
           action: z.enum([
             "stop",

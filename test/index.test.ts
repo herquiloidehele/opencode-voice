@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest"
 import OpencodeSpeakerDefault, { OpencodeSpeaker } from "../src/index.js"
-import { DEFAULT_TTS_MODEL } from "../src/config.js"
+import { DEFAULT_TTS_MODEL, ENV_DISABLED } from "../src/config.js"
 
 describe("opencode-speaker plugin module shape", () => {
   it("default-exports the plugin function itself (current opencode contract)", () => {
@@ -31,15 +31,15 @@ describe("OpencodeSpeaker plugin", () => {
       $: vi.fn(),
     }) as any
 
-  it("returns an empty (no-op) hooks object when OPENCODE_VOICE_DISABLED=1", async () => {
-    const oldEnv = process.env.OPENCODE_VOICE_DISABLED
-    process.env.OPENCODE_VOICE_DISABLED = "1"
+  it(`returns an empty (no-op) hooks object when ${ENV_DISABLED}=1`, async () => {
+    const oldEnv = process.env[ENV_DISABLED]
+    process.env[ENV_DISABLED] = "1"
     try {
       const hooks = await OpencodeSpeaker(baseCtx(), {})
       expect(hooks).toEqual({})
     } finally {
-      if (oldEnv === undefined) delete process.env.OPENCODE_VOICE_DISABLED
-      else process.env.OPENCODE_VOICE_DISABLED = oldEnv
+      if (oldEnv === undefined) delete process.env[ENV_DISABLED]
+      else process.env[ENV_DISABLED] = oldEnv
     }
   })
 

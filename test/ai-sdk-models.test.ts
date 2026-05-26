@@ -4,7 +4,7 @@ import {
   resolveSpeechModel,
   ConfigError,
 } from "../src/ai-sdk/models.js"
-import { DEFAULT_TTS_MODEL } from "../src/config.js"
+import { DEFAULT_TTS_MODEL, DEFAULT_NARRATOR_MODEL } from "../src/config.js"
 
 describe("resolveLanguageModel", () => {
   it("returns a model for openai/<model>", () => {
@@ -14,7 +14,7 @@ describe("resolveLanguageModel", () => {
   })
 
   it("returns a model for anthropic/<model>", () => {
-    const model = resolveLanguageModel("anthropic/claude-haiku-4")
+    const model = resolveLanguageModel(DEFAULT_NARRATOR_MODEL)
     expect(model).toBeDefined()
     expect(model).not.toBeNull()
   })

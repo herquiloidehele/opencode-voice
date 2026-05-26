@@ -1,4 +1,23 @@
 import { z } from "zod"
+import { SLUG_RE } from "./ai-sdk/models.js"
+
+/** Plugin identity. Used as the log scope, tmpdir prefix, and error labels. */
+export const PLUGIN_NAME = "opencode-speaker"
+
+/** Default TTS model slug (used by schema + tests + demo scripts). */
+export const DEFAULT_TTS_MODEL = "openai/gpt-4o-mini-tts"
+
+/** Default narrator (LLM) model slug. */
+export const DEFAULT_NARRATOR_MODEL = "openai/gpt-4.1-mini"
+
+/** Default startup greeting (spoken once when the plugin is ready). */
+export const DEFAULT_GREETING = "opencode speaker ready"
+
+/** Environment variable name: when "1", disables the plugin entirely. */
+export const ENV_DISABLED = "OPENCODE_VOICE_DISABLED"
+
+/** Environment variable name: when "1", starts the plugin muted. */
+export const ENV_MUTE = "OPENCODE_VOICE_MUTE"
 
 const PrioritySchema = z.enum(["urgent", "normal", "chatty"]).optional()
 const ModeSchema = z.enum(["template", "narrate", "verbatim"])
@@ -9,10 +28,6 @@ const EventConfigSchema = z.object({
   priority: PrioritySchema,
 })
 
-
-export const DEFAULT_TTS_MODEL = "openai/gpt-4o-mini-tts"
-
-const SLUG_RE = /^[a-z][a-z0-9-]*\/[A-Za-z0-9._-]+$/
 const SLUG_MSG = `must be 'provider/model' (e.g. '${DEFAULT_TTS_MODEL}')`
 
 const TTSSchema = z.object({
@@ -23,7 +38,7 @@ const TTSSchema = z.object({
 }).default({})
 
 const NarratorSchema = z.object({
-  model: z.string().regex(SLUG_RE, `narrator.model ${SLUG_MSG}`).default("anthropic/claude-haiku-4"),
+  model: z.string().regex(SLUG_RE, `narrator.model ${SLUG_MSG}`).default(DEFAULT_NARRATOR_MODEL),
   timeoutMs:     z.number().int().positive().default(5000),
   minIntervalMs: z.number().int().min(0).default(3000),
 }).default({})
@@ -37,7 +52,7 @@ const EventsSchema = z.record(z.string(), EventConfigSchema).default({})
 const VoiceConfigSchema = z.object({
   enabled: z.boolean().default(true),
   startMuted: z.boolean().default(false),
-  greeting: z.string().default("opencode speaker ready"),
+  greeting: z.string().default(DEFAULT_GREETING),
   tts: TTSSchema,
   narrator: NarratorSchema,
   events: EventsSchema,
@@ -116,8 +131,8 @@ export function parseConfig(
   const cfg = parsed.data
 
   // Env overrides (the only ones we still need — API keys are AI SDK's job).
-  if (env.OPENCODE_VOICE_DISABLED === "1") cfg.enabled = false
-  if (env.OPENCODE_VOICE_MUTE === "1") cfg.startMuted = true
+  if (env[ENV_DISABLED] === "1") cfg.enabled = false
+  if (env[ENV_MUTE] === "1") cfg.startMuted = true
 
   return { ok: true, config: cfg }
 }

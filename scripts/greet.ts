@@ -27,7 +27,7 @@
  */
 
 import { OpencodeSpeaker } from "../src/index.js"
-import { DEFAULT_TTS_MODEL } from "../src/config.js"
+import { DEFAULT_TTS_MODEL, ENV_DISABLED, ENV_MUTE } from "../src/config.js"
 
 const args = process.argv.slice(2)
 function flag(name: string): string | undefined {
@@ -78,11 +78,11 @@ console.error(
     (voice ? ` voice=${voice}` : "") +
     (greeting !== undefined ? ` greeting=${JSON.stringify(greeting)}` : " greeting=(default)"),
 )
-if (process.env.OPENCODE_VOICE_MUTE === "1") {
-  console.error("[greet] OPENCODE_VOICE_MUTE=1 set; greeting should be skipped")
+if (process.env[ENV_MUTE] === "1") {
+  console.error(`[greet] ${ENV_MUTE}=1 set; greeting should be skipped`)
 }
-if (process.env.OPENCODE_VOICE_DISABLED === "1") {
-  console.error("[greet] OPENCODE_VOICE_DISABLED=1 set; plugin should no-op")
+if (process.env[ENV_DISABLED] === "1") {
+  console.error(`[greet] ${ENV_DISABLED}=1 set; plugin should no-op`)
 }
 
 const hooks = (await OpencodeSpeaker(ctx as any, options)) as Record<string, unknown>

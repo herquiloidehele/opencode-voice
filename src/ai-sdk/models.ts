@@ -10,7 +10,11 @@ export class ConfigError extends Error {
   }
 }
 
-const SLUG_RE = /^[a-z][a-z0-9-]*\/[A-Za-z0-9._-]+$/
+/**
+ * Slug regex shared with `src/config.ts`. Exported so both the Zod schema
+ * validation and the runtime resolver agree on what "provider/model" means.
+ */
+export const SLUG_RE = /^[a-z][a-z0-9-]*\/[A-Za-z0-9._-]+$/
 
 function parseSlug(slug: string, field: string): [string, string] {
   if (!SLUG_RE.test(slug)) {
