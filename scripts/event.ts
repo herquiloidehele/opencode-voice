@@ -1,6 +1,6 @@
 /**
  * Simulate an opencode event flowing through the plugin's full pipeline:
- *   event -> dispatcher -> handler registry -> queue -> system TTS.
+ *   event -> dispatcher -> handler registry -> queue -> AI SDK TTS.
  *
  * Usage:
  *   npm run demo:event -- session.idle

@@ -1,4 +1,4 @@
-import type { Runner } from "../tts/system.js"
+import type { Runner } from "./runner.js"
 import { writeFile, mkdtemp } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"

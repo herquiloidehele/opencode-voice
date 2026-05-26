@@ -48,15 +48,9 @@ describe("resolveSpeechModel", () => {
     expect(r.model).not.toBeNull()
   })
 
-  it("returns system provider with null model", () => {
-    const r = resolveSpeechModel("system/say")
-    expect(r.provider).toBe("system")
-    expect(r.model).toBeNull()
-  })
-
   it("throws ConfigError for unknown TTS prefix", () => {
     expect(() => resolveSpeechModel("unknown/foo")).toThrow(ConfigError)
-    expect(() => resolveSpeechModel("unknown/foo")).toThrow(/openai.*elevenlabs.*system/)
+    expect(() => resolveSpeechModel("unknown/foo")).toThrow(/openai.*elevenlabs/)
   })
 
   it("throws ConfigError for malformed slug", () => {

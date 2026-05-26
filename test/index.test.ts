@@ -57,7 +57,10 @@ describe("OpencodeSpeaker plugin", () => {
 
   it("accepts options as the second argument (opencode's plugin contract)", async () => {
     const hooks = (await OpencodeSpeaker(baseCtx(), {
-      tts: { model: "system/say" },
+      tts: { model: "openai/gpt-4o-mini-tts" },
+      // Keep the greeting from pushing onto the queue and triggering a
+      // background synthesize() call (which would fail without OPENAI_API_KEY).
+      startMuted: true,
     })) as any
     // Initialization should succeed (returns hooks object, not {}).
     expect(typeof hooks.event).toBe("function")

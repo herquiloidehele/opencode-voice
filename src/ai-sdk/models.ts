@@ -36,9 +36,7 @@ export function resolveLanguageModel(slug: string): LanguageModel {
   }
 }
 
-export type ResolvedSpeech =
-  | { provider: "openai" | "elevenlabs"; model: SpeechModel }
-  | { provider: "system"; model: null }
+export type ResolvedSpeech = { provider: "openai" | "elevenlabs"; model: SpeechModel }
 
 export function resolveSpeechModel(slug: string): ResolvedSpeech {
   const [provider, modelId] = parseSlug(slug, "tts.model")
@@ -47,11 +45,9 @@ export function resolveSpeechModel(slug: string): ResolvedSpeech {
       return { provider: "openai", model: openai.speech(modelId) }
     case "elevenlabs":
       return { provider: "elevenlabs", model: elevenlabs.speech(modelId) }
-    case "system":
-      return { provider: "system", model: null }
     default:
       throw new ConfigError(
-        `Unknown TTS provider '${provider}' in '${slug}'. Supported: openai, elevenlabs, system`,
+        `Unknown TTS provider '${provider}' in '${slug}'. Supported: openai, elevenlabs`,
       )
   }
 }

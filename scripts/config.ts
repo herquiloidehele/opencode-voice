@@ -4,7 +4,7 @@
  * what your opencode.json plugin-tuple options will actually do.
  *
  * Usage:
- *   npm run demo:config -- '{"tts":{"model":"system/say"}}'
+ *   npm run demo:config -- '{"tts":{"model":"openai/gpt-4o-mini-tts"}}'
  *   npm run demo:config -- --file=path/to/options.json
  *   npm run demo:config -- --defaults    # show the defaults
  */

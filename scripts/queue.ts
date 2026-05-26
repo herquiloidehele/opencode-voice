@@ -1,9 +1,12 @@
 /**
  * Audibly demonstrate the speech queue's priority interrupt, dedup, and
- * stale-drop behavior. Uses the system TTS provider.
+ * stale-drop behavior. Uses the AI SDK OpenAI TTS provider.
  *
  * Usage:
- *   npm run demo:queue
+ *   OPENAI_API_KEY=... npm run demo:queue
+ *
+ * Env vars:
+ *   OPENAI_API_KEY        required
  *
  * What you should hear:
  *   1. "Speaking chatty one" starts.
@@ -14,40 +17,24 @@
 
 import { SpeechQueue } from "../src/queue/speech-queue.js"
 import { Priority, type SpeechRequest } from "../src/queue/types.js"
-import { createSystemProvider } from "../src/tts/system.js"
-import { spawn } from "node:child_process"
-import { access, constants } from "node:fs/promises"
-import { delimiter, sep } from "node:path"
+import { createAiSdkProvider } from "../src/tts/ai-sdk.js"
+import { createPlayer } from "../src/audio/player.js"
+import { defaultRunner } from "../src/audio/runner.js"
+import { resolveSpeechModel } from "../src/ai-sdk/models.js"
 
-const runner = {
-  async has(b: string) {
-    for (const dir of (process.env.PATH ?? "").split(delimiter)) {
-      try { await access(`${dir}${sep}${b}`, constants.X_OK); return true } catch {}
-    }
-    return false
-  },
-  run(cmd: string[], signal: AbortSignal) {
-    return new Promise<{ exitCode: number }>((resolve, reject) => {
-      const c = spawn(cmd[0], cmd.slice(1), { stdio: "ignore" })
-      const onAbort = () => c.kill("SIGTERM")
-      signal.addEventListener("abort", onAbort)
-      c.on("error", reject)
-      c.on("exit", (code) => {
-        signal.removeEventListener("abort", onAbort)
-        if (signal.aborted) reject(new DOMException("aborted", "AbortError"))
-        else resolve({ exitCode: code ?? 0 })
-      })
-    })
-  },
-}
+const resolved = resolveSpeechModel("openai/gpt-4o-mini-tts")
+const provider = createAiSdkProvider()
+await provider.init({ model: resolved.model, provider: resolved.provider })
 
-const provider = createSystemProvider({ runner })
-await provider.init({})
+const runner = await defaultRunner()
+const player = createPlayer({ runner })
+await player.init()
 
 async function speak(req: SpeechRequest, signal: AbortSignal): Promise<void> {
   console.log(`[queue] >>> speaking ${req.id}: "${req.text}" (priority=${req.priority})`)
   try {
-    await provider.synthesize(req.text, { rate: 1.2 }, signal)
+    const result = await provider.synthesize(req.text, { rate: 1.2 }, signal)
+    await player.play(result.audio, result.contentType, signal)
     console.log(`[queue] <<< finished ${req.id}`)
   } catch (err: any) {
     if (err?.name === "AbortError") console.log(`[queue] xxx aborted ${req.id}`)

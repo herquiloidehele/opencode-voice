@@ -4,9 +4,9 @@ import { createLogger } from "./log.js"
 import { SpeechQueue } from "./queue/speech-queue.js"
 import { type SpeechRequest } from "./queue/types.js"
 import { registerProvider, getProvider } from "./tts/provider.js"
-import { createSystemProvider } from "./tts/system.js"
 import { createAiSdkProvider } from "./tts/ai-sdk.js"
 import { createPlayer, type Player } from "./audio/player.js"
+import { defaultRunner } from "./audio/runner.js"
 import { createHandlerRegistry } from "./handlers/index.js"
 import { createNarrator } from "./handlers/narrator.js"
 import {
@@ -89,25 +89,21 @@ async function initPlugin(ctx: PluginCtx, options?: PluginOptions) {
     return {}
   }
 
-  // 2. Register the right TTS provider.
-  if (resolvedSpeech.provider === "system") {
-    registerProvider(createSystemProvider({}))
-  } else {
-    const aiSdkProvider = createAiSdkProvider()
-    try {
-      await aiSdkProvider.init({
-        model: resolvedSpeech.model,
-        provider: resolvedSpeech.provider,
-        voice: config.tts.voice,
-      })
-    } catch (err) {
-      await logger.error("Failed to initialize TTS provider; plugin disabled", {
-        error: String(err),
-      })
-      return {}
-    }
-    registerProvider(aiSdkProvider)
+  // 2. Register the AI SDK TTS provider.
+  const aiSdkProvider = createAiSdkProvider()
+  try {
+    await aiSdkProvider.init({
+      model: resolvedSpeech.model,
+      provider: resolvedSpeech.provider,
+      voice: config.tts.voice,
+    })
+  } catch (err) {
+    await logger.error("Failed to initialize TTS provider; plugin disabled", {
+      error: String(err),
+    })
+    return {}
   }
+  registerProvider(aiSdkProvider)
 
   const provider = getProvider(resolvedSpeech.provider)
   if (!provider) {
@@ -117,53 +113,19 @@ async function initPlugin(ctx: PluginCtx, options?: PluginOptions) {
     return {}
   }
 
-  // 3. Set up audio player (only used if provider returns real audio bytes).
+  // 3. Set up audio player. The AI SDK provider returns raw audio bytes that
+  // we need to hand off to the OS's audio playback binary.
   let player: Player | null = null
-  if (provider.capabilities.streaming) {
-    try {
-      // Minimal default runner inline (same shape as Runner in src/tts/system.ts).
-      const { spawn } = await import("node:child_process")
-      const { access, constants } = await import("node:fs/promises")
-      const { delimiter, sep } = await import("node:path")
-      const runner = {
-        async has(b: string) {
-          const PATH = process.env.PATH ?? ""
-          for (const d of PATH.split(delimiter)) {
-            try {
-              await access(`${d}${sep}${b}`, constants.X_OK)
-              return true
-            } catch {
-              /* keep searching */
-            }
-          }
-          return false
-        },
-        run(cmd: string[], signal: AbortSignal) {
-          return new Promise<{ exitCode: number }>((resolve, reject) => {
-            const c = spawn(cmd[0], cmd.slice(1), { stdio: "ignore" })
-            const onAbort = () => c.kill("SIGTERM")
-            signal.addEventListener("abort", onAbort)
-            c.on("error", (e) => {
-              signal.removeEventListener("abort", onAbort)
-              reject(e)
-            })
-            c.on("exit", (code) => {
-              signal.removeEventListener("abort", onAbort)
-              if (signal.aborted) reject(new DOMException("aborted", "AbortError"))
-              else resolve({ exitCode: code ?? 0 })
-            })
-          })
-        },
-      }
-      player = createPlayer({ runner })
-      await player.init()
-    } catch (err) {
-      await logger.warn(
-        "Audio player unavailable; cloud providers may not produce output",
-        { error: String(err) },
-      )
-      player = null
-    }
+  try {
+    const runner = await defaultRunner()
+    player = createPlayer({ runner })
+    await player.init()
+  } catch (err) {
+    await logger.warn(
+      "Audio player unavailable; cloud providers may not produce output",
+      { error: String(err) },
+    )
+    player = null
   }
 
   // 4. Build the speak function used by the queue.
@@ -177,7 +139,6 @@ async function initPlugin(ctx: PluginCtx, options?: PluginOptions) {
       },
       signal,
     )
-    if (result.contentType === "audio/none") return // system providers self-play
     if (!player) {
       await logger.warn("Audio produced but no player available; dropping audio")
       return

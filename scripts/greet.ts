@@ -15,7 +15,7 @@
  *
  * Flags:
  *   --greeting=<text>          Override greeting text. Empty string disables it.
- *   --model=<provider/model>   TTS model slug (default: system/say).
+ *   --model=<provider/model>   TTS model slug (default: openai/gpt-4o-mini-tts).
  *   --voice=<name>             Voice/voice-id for the provider.
  *   --wait=<ms>                How long to wait for the queue to drain (default 6000).
  *
@@ -38,7 +38,7 @@ function has(name: string): boolean {
 }
 
 const greeting = flag("greeting")
-const model = flag("model") ?? "system/say"
+const model = flag("model") ?? "openai/gpt-4o-mini-tts"
 const voice = flag("voice")
 const waitMs = flag("wait") ? Number(flag("wait")) : 6000
 

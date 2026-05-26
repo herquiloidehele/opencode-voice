@@ -1,6 +1,6 @@
 # opencode-speaker
 
-Speaker plugin for [opencode](https://opencode.ai). Speaks agent activity through pluggable text-to-speech backends — works offline with your OS's built-in voice, or with OpenAI / ElevenLabs for higher quality.
+Speaker plugin for [opencode](https://opencode.ai). Speaks agent activity through pluggable text-to-speech backends — wired into OpenAI or ElevenLabs via the Vercel AI SDK.
 
 ## Quick Start
 
@@ -13,7 +13,7 @@ Speaker plugin for [opencode](https://opencode.ai). Speaks agent activity throug
 }
 ```
 
-2. Start opencode. The plugin will use your OS's built-in voice (macOS `say`, Linux `spd-say`/`espeak`, Windows PowerShell).
+2. Set `OPENAI_API_KEY` in your environment, then start opencode. (Default TTS is `openai/gpt-4o-mini-tts`. To use ElevenLabs instead, see [Providers](#providers).)
 
 3. By default you'll hear: session completions (LLM-summarized), errors, permission requests, "all todos complete", and session compactions.
 
@@ -27,7 +27,7 @@ array — *not* as a top-level key. Don't put `"voice": { … }` at the top of
 ```json
 {
   "plugin": [
-    ["opencode-speaker", { "tts": { "model": "system/say", "voice": "Samantha" } }]
+    ["opencode-speaker", { "tts": { "model": "openai/gpt-4o-mini-tts", "voice": "nova" } }]
   ]
 }
 ```
@@ -44,7 +44,7 @@ Full example:
     [
       "opencode-speaker",
       {
-        "tts": { "model": "system/say", "voice": "Samantha", "rate": 1.0 },
+        "tts": { "model": "openai/gpt-4o-mini-tts", "voice": "nova", "rate": 1.0 },
         "narrator": { "model": "anthropic/claude-haiku-4" },
         "events": {
           "tool.execute.before": { "enabled": true }
@@ -61,17 +61,7 @@ import anything.
 
 ## Providers
 
-### System (default, zero-config)
-
-```json
-{ "tts": { "model": "system/say", "voice": "Samantha" } }
-```
-
-- macOS: any installed voice. Try `say -v ?` for the list.
-- Linux: requires `speech-dispatcher` (`spd-say`) or `espeak`.
-- Windows: uses built-in `System.Speech.Synthesis.SpeechSynthesizer`.
-
-### OpenAI
+### OpenAI (default)
 
 ```json
 { "tts": { "model": "openai/gpt-4o-mini-tts", "voice": "nova" } }
@@ -223,9 +213,10 @@ registerProvider({
 ```
 
 Custom providers are selected with a `custom/<name>`-style slug — but note
-that the built-in slug parser only knows about `openai/*`, `elevenlabs/*`,
-`anthropic/*`, and `system/say`. To route to a custom provider today,
-either fork the slug resolver in `src/ai-sdk/models.ts` or open an issue.
+that the built-in slug parser only knows about `openai/*` and `elevenlabs/*`
+for TTS, and `openai/*`, `anthropic/*` for the narrator. To route to a
+custom provider today, either fork the slug resolver in
+`src/ai-sdk/models.ts` or open an issue.
 
 ## Local Development & Validation
 
@@ -233,7 +224,7 @@ Six runnable demo scripts let you exercise each feature without booting opencode
 
 | Script | What it validates |
 |---|---|
-| `npm run demo:say -- "text"` | Synthesis + playback for any provider. Add `--model=openai/gpt-4o-mini-tts --voice=nova` (needs `OPENAI_API_KEY`). |
+| `npm run demo:say -- "text"` | Synthesis + playback. Requires `OPENAI_API_KEY` (default model is `openai/gpt-4o-mini-tts`). Override with `--model=elevenlabs/eleven_turbo_v2_5 --voice=<id>` to test ElevenLabs. |
 | `npm run demo:queue` | The speech queue's priority interrupt + dedup behavior. You should hear interruption mid-sentence and three deduped requests collapse to one. |
 | `npm run demo:event -- <event.type>` | The full event-to-audio pipeline. Examples: `session.idle`, `session.error --message="boom"`, `permission.asked --tool=write`, `todo.completed.all`. Enable normally-off events with `--enable=tool.execute.before`. |
 | `npm run demo:narrator -- --assistant-text="..." --tool=bash` | The LLM narrator handler. Needs `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` depending on `--model=...`. Prints + speaks the generated summary. Use `--no-speak` to print only. |
@@ -264,8 +255,6 @@ When you change something, run in this order:
 **No audio on Linux:** install `speech-dispatcher` (`sudo apt install speech-dispatcher`) or `espeak`. For cloud-provider audio playback, install `pulseaudio-utils` (provides `paplay`) or `alsa-utils` (`aplay`) or `ffmpeg` (`ffplay`).
 
 **Windows blocked by execution policy:** run PowerShell once with `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
-
-**System voice not found on macOS:** list available voices with `say -v ?`. Some voices need to be downloaded via System Settings → Spoken Content.
 
 **Plugin self-disables silently:** check opencode's log file — `opencode-speaker` errors are logged at `error` / `warn` level via opencode's logging.
 

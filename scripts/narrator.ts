@@ -1,24 +1,33 @@
 /**
  * Test the LLM narrator handler in isolation. Sends a real request via the
- * Vercel AI SDK and prints + speaks the result.
+ * Vercel AI SDK and prints + speaks the result (speech via OpenAI TTS).
  *
  * Usage:
- *   ANTHROPIC_API_KEY=... npm run demo:narrator -- --assistant-text="I refactored the auth module" --tool=edit --tool=bash
+ *   ANTHROPIC_API_KEY=... OPENAI_API_KEY=... npm run demo:narrator -- --assistant-text="I refactored the auth module" --tool=edit --tool=bash
  *   OPENAI_API_KEY=...    npm run demo:narrator -- --assistant-text="..." --model=openai/gpt-5
  *
  * Flags:
- *   --assistant-text=...   sample recent assistant output (required)
- *   --tool=...             one or more recent tool calls (repeatable)
- *   --model=provider/id    override narrator model (default: anthropic/claude-haiku-4)
- *   --no-speak             only print, don't speak
+ *   --assistant-text=...      sample recent assistant output (required)
+ *   --tool=...                one or more recent tool calls (repeatable)
+ *   --model=provider/id       override narrator model (default: anthropic/claude-haiku-4)
+ *   --tts-model=provider/id   override TTS model (default: openai/gpt-4o-mini-tts)
+ *   --tts-voice=name          voice for the TTS provider
+ *   --no-speak                only print, don't speak
+ *
+ * Env vars:
+ *   ANTHROPIC_API_KEY     required if narrator model is anthropic/*
+ *   OPENAI_API_KEY        required if narrator or TTS model is openai/*
  */
 
 import { createNarrator } from "../src/handlers/narrator.js"
-import { createSystemProvider } from "../src/tts/system.js"
-import { resolveLanguageModel, ConfigError } from "../src/ai-sdk/models.js"
-import { spawn } from "node:child_process"
-import { access, constants } from "node:fs/promises"
-import { delimiter, sep } from "node:path"
+import { createAiSdkProvider } from "../src/tts/ai-sdk.js"
+import { createPlayer } from "../src/audio/player.js"
+import { defaultRunner } from "../src/audio/runner.js"
+import {
+  resolveLanguageModel,
+  resolveSpeechModel,
+  ConfigError,
+} from "../src/ai-sdk/models.js"
 
 const args = process.argv.slice(2)
 function flag(name: string): string | undefined {
@@ -36,17 +45,16 @@ if (!assistantText) {
 }
 const tools = multi("tool")
 const modelSlug = flag("model") ?? "anthropic/claude-haiku-4"
+const ttsModelSlug = flag("tts-model") ?? "openai/gpt-4o-mini-tts"
+const ttsVoice = flag("tts-voice")
 const noSpeak = args.includes("--no-speak")
 
 let model
 try {
   model = resolveLanguageModel(modelSlug)
 } catch (err) {
-  if (err instanceof ConfigError) {
-    console.error(err.message)
-  } else {
-    console.error(err)
-  }
+  if (err instanceof ConfigError) console.error(err.message)
+  else console.error(err)
   process.exit(1)
 }
 
@@ -65,28 +73,28 @@ console.log(`[narrator] output: ${output ?? "(null — fell back)"}`)
 if (!output) process.exit(0)
 if (noSpeak) process.exit(0)
 
-console.log("[narrator] speaking...")
-const runner = {
-  async has(b: string) {
-    for (const dir of (process.env.PATH ?? "").split(delimiter)) {
-      try { await access(`${dir}${sep}${b}`, constants.X_OK); return true } catch {}
-    }
-    return false
-  },
-  run(cmd: string[], signal: AbortSignal) {
-    return new Promise<{ exitCode: number }>((resolve, reject) => {
-      const c = spawn(cmd[0], cmd.slice(1), { stdio: "ignore" })
-      const onAbort = () => c.kill("SIGTERM")
-      signal.addEventListener("abort", onAbort)
-      c.on("error", reject)
-      c.on("exit", (code) => {
-        signal.removeEventListener("abort", onAbort)
-        resolve({ exitCode: code ?? 0 })
-      })
-    })
-  },
+console.log(`[narrator] speaking via ${ttsModelSlug}...`)
+let ttsResolved
+try {
+  ttsResolved = resolveSpeechModel(ttsModelSlug)
+} catch (err) {
+  if (err instanceof ConfigError) console.error(err.message)
+  else console.error(err)
+  process.exit(1)
 }
-const provider = createSystemProvider({ runner })
-await provider.init({})
-await provider.synthesize(output, {}, new AbortController().signal)
+
+const provider = createAiSdkProvider()
+await provider.init({
+  model: ttsResolved.model,
+  provider: ttsResolved.provider,
+  voice: ttsVoice,
+})
+
+const runner = await defaultRunner()
+const player = createPlayer({ runner })
+await player.init()
+
+const ac = new AbortController()
+const result = await provider.synthesize(output, { voice: ttsVoice }, ac.signal)
+await player.play(result.audio, result.contentType, ac.signal)
 console.log("[narrator] done.")

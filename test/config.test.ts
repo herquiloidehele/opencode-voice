@@ -7,7 +7,7 @@ describe("parseConfig", () => {
     expect(result.ok).toBe(true)
     if (result.ok) {
       expect(result.config.enabled).toBe(true)
-      expect(result.config.tts.model).toBe("system/say")
+      expect(result.config.tts.model).toBe("openai/gpt-4o-mini-tts")
       expect(result.config.narrator.model).toBe("anthropic/claude-haiku-4")
       expect(result.config.events["session.idle"].enabled).toBe(true)
       expect(result.config.events["session.idle"].mode).toBe("narrate")

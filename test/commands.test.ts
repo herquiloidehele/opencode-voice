@@ -17,7 +17,7 @@ function fakeQueue() {
 describe("commands", () => {
   it("mute calls queue.mute and updates state", () => {
     const q = fakeQueue()
-    const c = createCommands({ queue: q, providerName: "system", voiceName: "X" })
+    const c = createCommands({ queue: q, providerName: "openai", voiceName: "X" })
     c.mute()
     expect(q.mute).toHaveBeenCalled()
     expect(c.status().muted).toBe(true)
@@ -25,7 +25,7 @@ describe("commands", () => {
 
   it("unmute calls queue.unmute and updates state", () => {
     const q = fakeQueue()
-    const c = createCommands({ queue: q, providerName: "system", voiceName: "X" })
+    const c = createCommands({ queue: q, providerName: "openai", voiceName: "X" })
     c.mute()
     c.unmute()
     expect(q.unmute).toHaveBeenCalled()
@@ -34,7 +34,7 @@ describe("commands", () => {
 
   it("say pushes a NORMAL-priority request", () => {
     const q = fakeQueue()
-    const c = createCommands({ queue: q, providerName: "system", voiceName: "X" })
+    const c = createCommands({ queue: q, providerName: "openai", voiceName: "X" })
     c.say("hello there")
     const req = q.push.mock.calls[0][0]
     expect(req.text).toBe("hello there")
@@ -43,14 +43,14 @@ describe("commands", () => {
 
   it("test pushes a canned message", () => {
     const q = fakeQueue()
-    const c = createCommands({ queue: q, providerName: "system", voiceName: "X" })
+    const c = createCommands({ queue: q, providerName: "openai", voiceName: "X" })
     c.test()
     expect(q.push).toHaveBeenCalled()
   })
 
   it("stop calls queue.stop but leaves mute state alone", () => {
     const q = fakeQueue()
-    const c = createCommands({ queue: q, providerName: "system", voiceName: "X" })
+    const c = createCommands({ queue: q, providerName: "openai", voiceName: "X" })
     c.stop()
     expect(q.stop).toHaveBeenCalled()
     expect(q.mute).not.toHaveBeenCalled()
@@ -59,7 +59,7 @@ describe("commands", () => {
 
   it("toggle flips mute state and returns the new value", () => {
     const q = fakeQueue()
-    const c = createCommands({ queue: q, providerName: "system", voiceName: "X" })
+    const c = createCommands({ queue: q, providerName: "openai", voiceName: "X" })
     expect(c.toggle()).toBe(true)
     expect(q.mute).toHaveBeenCalledTimes(1)
     expect(c.status().muted).toBe(true)
